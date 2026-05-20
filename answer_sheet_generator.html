@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tạo mẫu phiếu theo số câu</title>
+  <style>
+    @page { size: A4; margin: 10mm; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:#111827;
+      background:#f3f4f6;
+    }
+    .top{
+      position:sticky;top:0;
+      background:#fff;
+      border-bottom:1px solid #e5e7eb;
+      padding:12px 12px;
+      z-index:10;
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+    label{display:block;font-size:12px;color:#6b7280;margin:0 0 6px}
+    input{padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;min-width:120px}
+    button{padding:10px 12px;border:1px solid #111827;border-radius:10px;background:#111827;color:#fff;cursor:pointer}
+    .hint{font-size:12px;color:#6b7280;margin-top:8px}
+
+    /* trang in */
+    .page{
+      width:190mm; /* A4 210mm - 2*10mm margin */
+      min-height:277mm;
+      margin:10px auto;
+      background:#fff;
+      padding:0;
+      position:relative;
+      box-shadow: 0 12px 30px rgba(0,0,0,.12);
+    }
+    @media print{
+      body{background:#fff}
+      .top{display:none}
+      .page{margin:0;box-shadow:none}
+    }
+
+    h1{font-size:16pt;margin:0 0 3mm 0}
+    .muted{color:#6b7280;font-size:10pt}
+    .sheet{padding:0}
+    .sheet-inner{padding:0}
+    .block{padding:6mm 0 0 0}
+
+    .header{padding:0 0 4mm 0}
+    .fields{display:flex;gap:6mm;flex-wrap:wrap}
+    .field{
+      border:1px solid #111827;
+      padding:2.5mm 3mm;
+      border-radius:2mm;
+      min-width:48mm;
+      flex:1;
+    }
+    .field b{display:block;font-size:9pt}
+    .field span{display:block;margin-top:1mm;min-height:6mm;border-bottom:1px dotted #9ca3af}
+    .hr{height:1px;background:#111827;margin:4mm 0}
+
+    /* Vùng marker + bubble: dùng % theo toạ độ warp (1000x1400) để khớp app */
+    .omr-wrap{
+      position:relative;
+      border:2px solid #111827;
+      border-radius:2mm;
+      width:100%;
+      height:200mm;
+      margin-top:2mm;
+      overflow:visible;
+    }
+    .marker{
+      position:absolute;
+      width:10mm;height:10mm;background:#000;
+      transform: translate(-50%, -50%); /* để tâm marker đúng góc */
+    }
+    .marker.tl{left:0%;top:0%}
+    .marker.tr{left:100%;top:0%}
+    .marker.br{left:100%;top:100%}
+    .marker.bl{left:0%;top:100%}
+
+    .bubble{
+      position:absolute;
+      width:7.5mm;height:7.5mm;border:1.8px solid #111827;border-radius:999px;
+      display:grid;place-items:center;
+      font-size:9pt;
+      background:#fff;
+    }
+    .qnum{
+      position:absolute;
+      transform: translate(-100%, -50%);
+      font-size:10pt;
+      font-weight:700;
+      color:#111827;
+      padding-right:2mm;
+      background:#fff;
+    }
+    .footer{
+      position:absolute;left:0;right:0;bottom:0;
+      font-size:9pt;color:#6b7280;
+      padding-top:3mm;
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="row">
+      <div>
+        <label>Số câu</label>
+        <input id="numQ" type="number" min="1" max="200" value="25">
+      </div>
+      <div>
+        <label>Số câu mỗi cột (C1,C2,C3)</label>
+        <input id="cols" type="text" value="9,8,8" placeholder="Ví dụ: 7,7,6">
+      </div>
+      <button id="btnRender">Tạo mẫu</button>
+      <button id="btnPrint" style="background:#0b5fff;border-color:#0b5fff">In</button>
+    </div>
+    <div class="hint">
+      Gợi ý: đề 20 câu → <b>7,7,6</b> (3 cột) hoặc <b>10,10</b> (2 cột). Đề 40 câu → <b>14,13,13</b>.
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="sheet">
+      <div class="block">
+        <div class="header">
+          <h1>PHIẾU TRẢ LỜI TRẮC NGHIỆM</h1>
+          <div class="muted">Tô đậm bằng bút xanh/đen. Không tô quá nhạt. Không gấp phiếu.</div>
+        </div>
+
+        <div class="fields">
+          <div class="field"><b>Học phần</b><span></span></div>
+          <div class="field" style="min-width:34mm"><b>Mã học phần</b><span></span></div>
+          <div class="field" style="min-width:28mm"><b>Mã đề</b><span></span></div>
+        </div>
+        <div class="fields" style="margin-top:3mm">
+          <div class="field"><b>MSSV</b><span></span></div>
+          <div class="field"><b>Họ tên</b><span></span></div>
+          <div class="field" style="min-width:34mm"><b>Lớp</b><span></span></div>
+        </div>
+
+        <div class="hr"></div>
+        <div class="muted">Vùng trắc nghiệm (app nhận diện theo 4 ô vuông đen ở 4 góc):</div>
+        <div class="omr-wrap" id="omr">
+          <div class="marker tl"></div>
+          <div class="marker tr"></div>
+          <div class="marker br"></div>
+          <div class="marker bl"></div>
+        </div>
+
+        <div class="footer">
+          Gợi ý chụp ảnh: đặt phiếu phẳng, đủ sáng, chụp thấy đủ 4 marker.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Dùng cùng logic toạ độ như app để mẫu in khớp vùng đọc (warpW=1000, warpH=1400)
+    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+    function defaultLayout(numQ){
+      const cols = Math.min(3, Math.max(1, Math.ceil(numQ / 15)));
+      const base = Math.floor(numQ / cols);
+      const rem = numQ % cols;
+      const arr = Array.from({length: cols}, (_,i) => base + (i < rem ? 1 : 0));
+      const c1 = arr[0] || 0, c2 = arr[1] || 0, c3 = arr[2] || 0;
+      return {
+        columns: [c1,c2,c3].filter(x=>x>0),
+        warpW: 1000, warpH: 1400,
+        marginX: 70, marginY: 90,
+        bubbleSize: 30,
+        optionGap: 34,
+        colGap: 40,
+      };
+    }
+    function computeBubbleBoxes(numQ, layout){
+      const {warpW, warpH, marginX, marginY, bubbleSize, optionGap, colGap} = layout;
+      const cols = layout.columns;
+      const innerW = warpW - 2*marginX;
+      const innerH = warpH - 2*marginY;
+      const colW = (innerW - colGap*(cols.length-1)) / cols.length;
+      const boxes = [];
+      let q = 0;
+      for (let ci=0; ci<cols.length; ci++){
+        const count = cols[ci];
+        const x0 = marginX + ci*(colW + colGap);
+        const rowH = innerH / count;
+        for (let r=0;r<count;r++){
+          if (q >= numQ) break;
+          const yCenter = marginY + r*rowH + rowH*0.55;
+          const opt = [];
+          const startX = x0 + colW*0.32;
+          for (let k=0;k<4;k++){
+            const x = startX + k*optionGap;
+            const y = yCenter - bubbleSize/2;
+            opt.push({x, y, w: bubbleSize, h: bubbleSize});
+          }
+          boxes.push({qIndex:q, options: opt});
+          q++;
+        }
+      }
+      return boxes;
+    }
+
+    function parseCols(text, numQ){
+      const t = String(text||"").trim();
+      if (!t) return defaultLayout(numQ).columns;
+      const parts = t.split(/[, ]+/).map(x=>Math.max(0, parseInt(x,10)||0)).filter(x=>Number.isFinite(x));
+      if (!parts.length) return defaultLayout(numQ).columns;
+      let cols = parts.slice(0,3);
+      while (cols.length && cols[cols.length-1] === 0) cols.pop();
+      if (!cols.length) return defaultLayout(numQ).columns;
+      const head = cols.slice(0,-1).reduce((a,b)=>a+b,0);
+      cols[cols.length-1] = Math.max(0, numQ - head);
+      const sum = cols.reduce((a,b)=>a+b,0);
+      if (sum !== numQ) return defaultLayout(numQ).columns;
+      return cols;
+    }
+
+    function render(){
+      const numQ = clamp(parseInt(document.getElementById("numQ").value,10)||25, 1, 200);
+      const cols = parseCols(document.getElementById("cols").value, numQ);
+      const layout = defaultLayout(numQ);
+      layout.columns = cols;
+      const boxes = computeBubbleBoxes(numQ, layout);
+
+      const omr = document.getElementById("omr");
+      // xoá bubble cũ
+      Array.from(omr.querySelectorAll(".bubble,.qnum")).forEach(n => n.remove());
+
+      const letters = ["A","B","C","D"];
+      for (const b of boxes){
+        // vẽ số câu bên trái bubble A
+        const a = b.options[0];
+        const qnum = document.createElement("div");
+        qnum.className = "qnum";
+        qnum.textContent = String(b.qIndex + 1);
+        qnum.style.left = (a.x / layout.warpW * 100) + "%";
+        qnum.style.top = ((a.y + a.h/2) / layout.warpH * 100) + "%";
+        omr.appendChild(qnum);
+
+        for (let i=0;i<4;i++){
+          const o = b.options[i];
+          const el = document.createElement("div");
+          el.className = "bubble";
+          el.innerHTML = "<small><b>"+letters[i]+"</b></small>";
+          el.style.left = ((o.x + o.w/2) / layout.warpW * 100) + "%";
+          el.style.top = ((o.y + o.h/2) / layout.warpH * 100) + "%";
+          el.style.transform = "translate(-50%, -50%)";
+          omr.appendChild(el);
+        }
+      }
+
+      // cập nhật URL để share
+      const url = new URL(location.href);
+      url.searchParams.set("numQ", String(numQ));
+      url.searchParams.set("cols", cols.join(","));
+      history.replaceState({}, "", url.toString());
+    }
+
+    function bootFromQuery(){
+      const url = new URL(location.href);
+      const numQ = url.searchParams.get("numQ");
+      const cols = url.searchParams.get("cols");
+      if (numQ) document.getElementById("numQ").value = numQ;
+      if (cols) document.getElementById("cols").value = cols;
+      render();
+    }
+
+    document.getElementById("btnRender").addEventListener("click", render);
+    document.getElementById("btnPrint").addEventListener("click", () => window.print());
+    bootFromQuery();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hướng dẫn 1 trang — App chấm trắc nghiệm</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:#111827;background:#fff;
+      line-height:1.35;
+    }
+    h1{font-size:18pt;margin:0 0 2mm 0}
+    h2{font-size:12pt;margin:5mm 0 2mm 0}
+    .muted{color:#6b7280}
+    .box{
+      border:1px solid #111827;border-radius:3mm;padding:4mm;margin:3mm 0;
+    }
+    ul{margin:2mm 0 0 5mm}
+    li{margin:1.3mm 0}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+    .tag{display:inline-block;border:1px solid #111827;border-radius:999px;padding:1mm 3mm;font-size:10pt}
+    .ok{background:#dcfce7;border-color:#16a34a}
+    .bad{background:#fee2e2;border-color:#dc2626}
+    .warn{background:#fef3c7;border-color:#f59e0b}
+    .empty{background:#e5e7eb;border-color:#9ca3af}
+    .small{font-size:10pt}
+  </style>
+</head>
+<body>
+  <h1>Hướng dẫn sử dụng (1 trang)</h1>
+  <div class="muted">App chấm trắc nghiệm giấy bằng ảnh chụp/scan, chạy trên trình duyệt (điện thoại/desktop), không upload dữ liệu.</div>
+
+  <div class="box">
+    <h2>Chuẩn bị nhanh</h2>
+    <ul>
+      <li>In đúng <b>Mẫu phiếu A4 có 4 ô vuông đen ở 4 góc vùng trắc nghiệm</b> (marker).</li>
+      <li>SV tô đậm đáp án A/B/C/D bằng <b>bút xanh/đen</b> (không tô quá nhạt).</li>
+      <li>Khi chụp: đặt phiếu phẳng, đủ sáng, ảnh <b>thấy đủ 4 marker</b>.</li>
+      <li>Lần đầu mở app cần mạng để tải thư viện quét ảnh; sau đó có thể dùng <b>offline</b>.</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <h2>Quy trình 4 bước (wizard)</h2>
+    <ol class="small">
+      <li><b>Tạo kỳ thi & nhập đáp án chuẩn</b>: nhập thông tin học phần, số câu, điểm mỗi câu; thêm 1 hoặc nhiều <b>mã đề</b> và dán đáp án.</li>
+      <li><b>Chụp bài</b>: nhập MSSV (tự điền tên nếu có CSV), chọn mã đề, chụp hoặc tải ảnh phiếu.</li>
+      <li><b>Đối chiếu</b>: app tự đọc; chỉ cần xem các câu <span class="tag warn">cần kiểm tra</span>, click sửa nhanh nếu cần.</li>
+      <li><b>Xác nhận & xuất</b>: nhập điểm tự luận, bấm lưu; xuất CSV/XLSX mở bằng Excel.</li>
+    </ol>
+  </div>
+
+  <div class="grid">
+    <div class="box">
+      <h2>Màu hiển thị</h2>
+      <ul class="small">
+        <li><span class="tag ok">Đúng</span> — trùng đáp án chuẩn</li>
+        <li><span class="tag bad">Sai</span> — khác đáp án chuẩn</li>
+        <li><span class="tag empty">Trống</span> — không tô đáp án</li>
+        <li><span class="tag warn">Cần kiểm tra</span> — ảnh mờ/2 đáp án gần nhau/tô nhạt</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h2>Xử lý lỗi thường gặp</h2>
+      <ul class="small">
+        <li><b>“Ảnh quá tối”</b>: bật đèn, chụp gần hơn, tránh bóng đổ.</li>
+        <li><b>“Không thấy đủ 4 góc”</b>: chụp lại để thấy đủ 4 marker, hoặc dùng nút <b>Chọn 4 góc thủ công</b>.</li>
+        <li><b>Nhiều câu cần kiểm tra</b>: ưu tiên scan/ảnh rõ hơn (thay vì chỉnh nâng cao).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box">
+    <h2>Import danh sách lớp (CSV)</h2>
+    <div class="small muted">CSV gợi ý cột: <b>MSSV,HoTen,Lop</b>. Sau khi import, nhập MSSV sẽ tự điền họ tên/lớp.</div>
+  </div>
+
+  <div class="muted small">Tài liệu đi kèm: <b>Checklist trước khi thi</b> (in phát cho lớp/cán bộ coi thi) và <b>Mẫu phiếu A4</b>.</div>
+</body>
+</html>
+
