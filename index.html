@@ -1,0 +1,2345 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b5fff" />
+  <title>Chấm trắc nghiệm giấy (Offline)</title>
+
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --muted:#8fa0c3;
+      --text:#eaf0ff;
+      --primary:#0b5fff;
+      --ok:#16a34a;
+      --bad:#dc2626;
+      --warn:#f59e0b;
+      --empty:#94a3b8;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 10px 30px rgba(0,0,0,.30);
+      --radius: 14px;
+      --font: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:var(--font);
+      background:linear-gradient(180deg, #070b16, #0b1020 35%, #070b16);
+      color:var(--text);
+    }
+    a{color:#9cc3ff}
+    button, input, select, textarea{font:inherit}
+    .wrap{max-width:1180px;margin:0 auto;padding:16px}
+
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      backdrop-filter: blur(8px);
+      background:rgba(7,11,22,.65);
+      border-bottom:1px solid var(--border);
+    }
+    .topbar-inner{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;max-width:1180px;margin:0 auto}
+    .brand{display:flex;gap:10px;align-items:center}
+    .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0b5fff,#22c55e);box-shadow:var(--shadow)}
+    .brand h1{font-size:16px;margin:0}
+    .brand small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+    .top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+    .btn{
+      appearance:none;border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      transition:.12s transform ease, .12s background ease, .12s border-color ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.09)}
+    .btn.primary{background:linear-gradient(135deg,#0b5fff,#1d4ed8);border-color:rgba(255,255,255,.18)}
+    .btn.primary:hover{background:linear-gradient(135deg,#1d4ed8,#0b5fff)}
+    .btn.ghost{background:transparent;box-shadow:none}
+    .btn.danger{background:rgba(220,38,38,.18);border-color:rgba(220,38,38,.35)}
+    .btn.small{padding:8px 10px;border-radius:10px}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+    @media (max-width: 960px){ .grid{grid-template-columns:1fr} }
+
+    .card{
+      background:linear-gradient(180deg,rgba(18,26,51,.92),rgba(18,26,51,.78));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      padding:14px;
+    }
+    .card h2{margin:0 0 10px 0;font-size:16px}
+    .muted{color:var(--muted)}
+    .help{
+      background:rgba(11,95,255,.12);
+      border:1px solid rgba(11,95,255,.25);
+      padding:10px;border-radius:12px;color:#dbe8ff;
+    }
+    .help b{color:#fff}
+
+    .wizard{
+      display:flex;gap:8px;flex-wrap:wrap;
+      border-bottom:1px solid var(--border);
+      padding-bottom:12px;margin-bottom:12px;
+    }
+    .step-pill{
+      display:flex;gap:8px;align-items:center;
+      padding:8px 10px;border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.05);
+      font-size:13px;
+    }
+    .step-pill .n{
+      width:22px;height:22px;border-radius:999px;display:grid;place-items:center;
+      background:rgba(255,255,255,.10);border:1px solid var(--border)
+    }
+    .step-pill.active{border-color:rgba(11,95,255,.55);background:rgba(11,95,255,.12)}
+    .step-pill.done{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.10)}
+
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width: 720px){ .row{grid-template-columns:1fr} }
+
+    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    input[type="text"], input[type="number"], textarea, select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.25);
+      color:var(--text);
+      outline:none;
+    }
+    textarea{min-height:96px;resize:vertical}
+    .controls{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:12px}
+    .controls-left,.controls-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+    .split{
+      display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start;
+    }
+    @media (max-width: 960px){ .split{grid-template-columns:1fr} }
+
+    .canvas-wrap{
+      position:relative;
+      border:1px dashed rgba(255,255,255,.25);
+      border-radius:14px;
+      overflow:hidden;
+      background:rgba(0,0,0,.25);
+    }
+    canvas{display:block;width:100%;height:auto}
+    .overlay-hint{
+      position:absolute;left:10px;top:10px;
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:12px;
+      padding:8px 10px;
+      max-width:90%;
+      font-size:13px;
+    }
+
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    th{font-size:12px;color:var(--muted);text-align:left;padding:0 8px}
+    td{
+      padding:10px 8px;
+      background:rgba(255,255,255,.04);
+      border-top:1px solid rgba(255,255,255,.08);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      vertical-align:middle;
+    }
+    td:first-child{border-left:1px solid rgba(255,255,255,.08);border-top-left-radius:12px;border-bottom-left-radius:12px}
+    td:last-child{border-right:1px solid rgba(255,255,255,.08);border-top-right-radius:12px;border-bottom-right-radius:12px}
+    .tag{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:12px;border:1px solid var(--border)}
+    .tag.ok{background:rgba(22,163,74,.14);border-color:rgba(22,163,74,.32)}
+    .tag.bad{background:rgba(220,38,38,.14);border-color:rgba(220,38,38,.30)}
+    .tag.warn{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.30)}
+    .tag.empty{background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.25)}
+
+    .toast{
+      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+      z-index:50;
+      background:rgba(0,0,0,.75);
+      border:1px solid rgba(255,255,255,.18);
+      padding:10px 12px;border-radius:14px;
+      max-width:min(820px, calc(100vw - 24px));
+      box-shadow:var(--shadow);
+      display:none;
+    }
+    .toast.show{display:block}
+    .toast b{color:#fff}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .hr{height:1px;background:var(--border);margin:12px 0}
+    .pillbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .pillbar .pill{padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:12px;color:var(--muted)}
+    .right-note{font-size:12px;color:var(--muted);line-height:1.5}
+    .danger-text{color:#fecaca}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Chấm trắc nghiệm giấy (Offline)</h1>
+          <small>Chạy trên trình duyệt, không upload dữ liệu</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn small" id="btnNewExam">Tạo kỳ thi</button>
+        <button class="btn small" id="btnDemo">Dữ liệu demo</button>
+        <button class="btn small" id="btnBackup">Tải dự án .json</button>
+        <label class="btn small" style="cursor:pointer">
+          Nạp dự án .json
+          <input type="file" id="fileRestore" accept="application/json" style="display:none">
+        </label>
+        <a class="btn small ghost" href="./answer_sheet_A4.html" target="_blank" rel="noopener">Mẫu phiếu A4</a>
+        <a class="btn small ghost" href="./answer_sheet_generator.html" target="_blank" rel="noopener">Tạo mẫu theo số câu</a>
+        <a class="btn small ghost" href="./huongdan_1trang.html" target="_blank" rel="noopener">Hướng dẫn</a>
+        <a class="btn small ghost" href="./checklist_truoc_khi_thi.html" target="_blank" rel="noopener">Checklist</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="wizard" id="wizardPills"></div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="help">
+          <b>Mẹo chụp ảnh:</b> Đặt phiếu trên mặt phẳng, đủ sáng, chụp thấy đủ 4 góc vùng trắc nghiệm (4 ô vuông đen).
+        </div>
+        <div class="hr"></div>
+
+        <!-- STEP 1 -->
+        <section data-step="1" class="step">
+          <h2>Bước 1 — Tạo kỳ thi & nhập đáp án chuẩn</h2>
+          <div class="row">
+            <div>
+              <label>Tên học phần</label>
+              <input id="courseName" type="text" placeholder="Ví dụ: Xử lý ảnh số" />
+            </div>
+            <div>
+              <label>Mã học phần</label>
+              <input id="courseCode" type="text" placeholder="Ví dụ: CV201" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Lớp</label>
+              <input id="className" type="text" placeholder="Ví dụ: KTPM-CTK42" />
+            </div>
+            <div>
+              <label>Học kỳ</label>
+              <input id="semester" type="text" placeholder="Ví dụ: HK2 2025-2026" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Số câu trắc nghiệm</label>
+              <input id="numQ" type="number" min="1" max="200" value="25" />
+            </div>
+            <div>
+              <label>Điểm mỗi câu</label>
+              <input id="ppq" type="number" step="0.25" value="0.25" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Bố cục phiếu (số câu mỗi cột) — tuỳ chọn</label>
+              <div class="row" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
+                <input id="col1Q" type="number" min="0" max="200" placeholder="Cột 1" />
+                <input id="col2Q" type="number" min="0" max="200" placeholder="Cột 2" />
+                <input id="col3Q" type="number" min="0" max="200" placeholder="Cột 3" />
+              </div>
+              <div class="right-note" style="margin-top:8px">
+                Ví dụ: đề 20 câu có thể để <b>7-7-6</b> (3 cột), hoặc <b>10-10-0</b> (2 cột).
+              </div>
+            </div>
+            <div>
+              <label>Mẫu phiếu theo cấu hình</label>
+              <button class="btn" id="btnOpenTemplate" style="width:100%">Mở mẫu phiếu để in</button>
+              <div class="right-note" style="margin-top:8px">
+                Khi đổi số câu (20/40…), hãy in đúng mẫu phiếu tương ứng để app đọc chính xác.
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Loại phiếu (để app chọn cách quét)</label>
+              <select id="sheetType">
+                <option value="marker">Phiếu có 4 ô vuông đen ở 4 góc (khuyến nghị)</option>
+                <option value="table">Phiếu dạng bảng vòng tròn (không có ô vuông đen)</option>
+              </select>
+              <div class="right-note" style="margin-top:8px">
+                Nếu phiếu <b>không có 4 ô vuông đen</b> giống ảnh bạn gửi, hãy chọn “phiếu dạng bảng” và dùng “Chọn 4 góc thủ công”.
+              </div>
+            </div>
+            <div></div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Điểm tự luận tối đa</label>
+              <input id="essayMax" type="number" step="0.25" value="0" />
+            </div>
+            <div>
+              <label>Làm tròn tổng điểm</label>
+              <select id="rounding">
+                <option value="0">Không làm tròn</option>
+                <option value="0.25">0.25</option>
+                <option value="0.5">0.5</option>
+                <option value="0.1">0.1</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+          <h2>Mã đề & đáp án chuẩn</h2>
+          <div class="row">
+            <div>
+              <label>Mã đề</label>
+              <input id="maDe" type="text" placeholder="Ví dụ: A1" />
+            </div>
+            <div class="right-note">
+              <div class="pillbar">
+                <span class="pill">Dán nhanh: <span class="mono">1A,2B,3C</span></span>
+                <span class="pill">Hoặc: <span class="mono">A,B,C,D,...</span></span>
+              </div>
+              <div style="margin-top:8px">
+                App sẽ tự chuẩn hoá thành Q1..Qn. Câu thiếu sẽ là trống.
+              </div>
+            </div>
+          </div>
+          <label>Đáp án chuẩn (dán vào ô dưới)</label>
+          <textarea id="answerKeyText" placeholder="Ví dụ: 1A, 2B, 3C... hoặc A,B,C,D..."></textarea>
+          <div class="controls">
+            <div class="controls-left">
+              <button class="btn" id="btnAddVersion">Thêm/ cập nhật mã đề</button>
+              <button class="btn" id="btnShowVersions">Xem danh sách mã đề</button>
+            </div>
+            <div class="controls-right">
+              <button class="btn primary" id="btnToStep2">Tiếp tục</button>
+            </div>
+          </div>
+
+          <div id="versionsList" style="display:none;margin-top:12px" class="card">
+            <h2>Danh sách mã đề</h2>
+            <div class="muted" style="font-size:13px;margin-bottom:8px">Nhấn vào mã đề để chỉnh sửa đáp án.</div>
+            <div id="versionsItems"></div>
+          </div>
+        </section>
+
+        <!-- STEP 2 -->
+        <section data-step="2" class="step" style="display:none">
+          <h2>Bước 2 — Chụp hoặc tải ảnh phiếu trả lời</h2>
+          <div class="row">
+            <div>
+              <label>MSSV</label>
+              <input id="mssv" type="text" placeholder="Nhập MSSV (nếu có danh sách lớp sẽ tự điền tên)" />
+            </div>
+            <div>
+              <label>Họ tên</label>
+              <input id="fullName" type="text" placeholder="Ví dụ: Nguyễn Văn A" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Lớp (của sinh viên)</label>
+              <input id="studentClass" type="text" placeholder="Ví dụ: CTK42" />
+            </div>
+            <div>
+              <label>Chọn mã đề</label>
+              <select id="maDeSelect"></select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Tải ảnh / chụp bằng camera</label>
+              <input id="fileImage" type="file" accept="image/*" capture="environment" />
+              <div class="right-note" style="margin-top:8px">
+                Nếu ảnh bị tối/nhòe: bật đèn, chụp gần hơn, và đảm bảo thấy đủ 4 ô vuông đen ở 4 góc vùng trắc nghiệm.
+              </div>
+            </div>
+            <div>
+              <label>Danh sách lớp (tuỳ chọn)</label>
+              <input id="fileStudents" type="file" accept=".csv,text/csv" />
+              <div class="right-note" style="margin-top:8px">
+                CSV gợi ý cột: <span class="mono">MSSV,HoTen,Lop</span>. Khi nhập MSSV app sẽ tự điền họ tên/lớp.
+              </div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <div class="controls-left">
+              <button class="btn" id="btnBack1">Quay lại</button>
+              <button class="btn" id="btnClearImage">Xoá ảnh</button>
+            </div>
+            <div class="controls-right">
+              <button class="btn primary" id="btnToStep3" disabled>Quét bài</button>
+            </div>
+          </div>
+
+          <div id="previewArea" style="margin-top:12px"></div>
+        </section>
+
+        <!-- STEP 3 -->
+        <section data-step="3" class="step" style="display:none">
+          <h2>Bước 3 — App tự quét & đối chiếu</h2>
+          <div class="split">
+            <div>
+              <div class="pillbar" style="margin-bottom:8px">
+                <button class="btn small" id="btnViewWarp">Ảnh đã căn thẳng</button>
+                <button class="btn small" id="btnViewOriginal">Ảnh gốc</button>
+              </div>
+              <div class="canvas-wrap">
+                <canvas id="warpCanvas" width="1000" height="1400"></canvas>
+                <canvas id="origCanvas" width="1200" height="1600" style="display:none"></canvas>
+                <div class="overlay-hint" id="scanHint">Đang chờ ảnh…</div>
+              </div>
+              <div class="controls">
+                <div class="controls-left">
+                  <button class="btn" id="btnBack2">Quay lại</button>
+                  <button class="btn" id="btnManualCorners">Chọn 4 góc thủ công</button>
+                </div>
+                <div class="controls-right">
+                  <button class="btn primary" id="btnRescan">Quét lại</button>
+                  <button class="btn primary" id="btnToStep4" disabled>Xác nhận điểm</button>
+                </div>
+              </div>
+              <div class="right-note">
+                Gợi ý: Nếu app báo “Không thấy đủ 4 góc”, hãy dùng nút “Chọn 4 góc thủ công” và chạm 4 góc theo thứ tự <b>Trên trái → Trên phải → Dưới phải → Dưới trái</b>.
+              </div>
+            </div>
+            <div class="card">
+              <div class="pillbar" style="justify-content:space-between">
+                <div>
+                  <h2 style="margin-bottom:4px">Bảng đối chiếu</h2>
+                  <div class="muted" id="summaryText">—</div>
+                </div>
+                <div class="pillbar">
+                  <label class="btn small" style="cursor:pointer">
+                    <input id="onlyNeedCheck" type="checkbox" style="margin-right:8px">
+                    Chỉ hiện câu cần kiểm tra
+                  </label>
+                </div>
+              </div>
+              <div style="overflow:auto;max-height:62vh;margin-top:8px">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Câu</th>
+                      <th>SV</th>
+                      <th>GV</th>
+                      <th>Độ tin cậy</th>
+                      <th>Kết quả</th>
+                      <th>Sửa</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reviewRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- STEP 4 -->
+        <section data-step="4" class="step" style="display:none">
+          <h2>Bước 4 — Xác nhận điểm & xuất kết quả</h2>
+          <div class="row">
+            <div class="card">
+              <h2>Điểm</h2>
+              <div class="row">
+                <div id="essayScoreWrap">
+                  <label>Điểm tự luận (nhập tay)</label>
+                  <input id="essayScore" type="number" step="0.25" value="0" />
+                </div>
+                <div>
+                  <label>Ghi chú (tuỳ chọn)</label>
+                  <input id="note" type="text" placeholder="Ví dụ: sửa tay 3 câu do ảnh mờ" />
+                </div>
+              </div>
+              <div class="hr"></div>
+              <div id="scoreBox" class="help"></div>
+              <div class="controls">
+                <div class="controls-left">
+                  <button class="btn" id="btnBack3">Quay lại</button>
+                  <button class="btn" id="btnSaveResult">Lưu bài đã chấm</button>
+                </div>
+                <div class="controls-right">
+                  <button class="btn primary" id="btnExportCSV">Xuất CSV</button>
+                  <button class="btn primary" id="btnExportXLSX">Xuất XLSX</button>
+                </div>
+              </div>
+              <div class="right-note" id="exportHint" style="margin-top:8px"></div>
+            </div>
+            <div class="card">
+              <h2>Thống kê nhanh (trên dữ liệu đã lưu)</h2>
+              <div class="muted" style="font-size:13px;margin-bottom:10px">Sau khi lưu nhiều bài, bạn có thể xuất CSV/XLSX để xem thống kê chi tiết trong Excel.</div>
+              <div id="statsBox" class="right-note">Chưa có dữ liệu.</div>
+              <div class="hr"></div>
+              <button class="btn danger" id="btnDangerReset">Xoá toàn bộ dữ liệu (trên trình duyệt)</button>
+              <div class="right-note danger-text" style="margin-top:8px">Chỉ dùng khi chắc chắn: thao tác này không thể hoàn tác.</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="card">
+        <h2>Tình trạng</h2>
+        <div id="statusBox" class="right-note">
+          Đang tải…
+        </div>
+        <div class="hr"></div>
+        <h2>Nâng cao (tuỳ chọn)</h2>
+        <div class="right-note">
+          Mặc định app tự quét. Nếu ảnh “khó” (tối/nhòe/xiên), bạn có thể chỉnh một vài ngưỡng.
+        </div>
+        <label>Ngưỡng “tô đen” tối thiểu (0–1)</label>
+        <input id="minFill" type="number" min="0" max="1" step="0.01" value="0.35" />
+        <label>Ngưỡng “không chắc” (chênh lệch 0–1)</label>
+        <input id="minDiff" type="number" min="0" max="1" step="0.01" value="0.10" />
+        <label>Đánh dấu “cần kiểm tra” khi độ tin cậy dưới (%)</label>
+        <input id="needCheckConf" type="number" min="0" max="100" step="1" value="70" />
+        <div class="hr"></div>
+        <h2>Thông tin offline</h2>
+        <div class="right-note">
+          Lần đầu mở trang cần mạng để tải thư viện quét ảnh (OpenCV.js). Sau đó app sẽ hoạt động offline nhờ bộ nhớ cache.
+        </div>
+        <div class="controls">
+          <div class="controls-left">
+            <button class="btn" id="btnInstallPWA">Cài như ứng dụng (tuỳ máy)</button>
+          </div>
+          <div class="controls-right">
+            <button class="btn" id="btnCheckOffline">Kiểm tra offline</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- OpenCV.js: dùng để warp phối cảnh + threshold + contour detection -->
+  <script src="https://docs.opencv.org/4.x/opencv.js" async></script>
+  <!-- XLSX (tuỳ chọn): nếu tải được sẽ xuất XLSX, nếu không thì vẫn xuất CSV -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" async></script>
+
+  <script>
+    /**
+     * App chấm trắc nghiệm giấy chạy offline trên trình duyệt.
+     * Mục tiêu: UI tối giản cho giảng viên ít rành công nghệ.
+     *
+     * Lưu ý:
+     * - Không upload dữ liệu lên server.
+     * - Dữ liệu lưu trong localStorage (project JSON) + có thể tải/ nạp file .json.
+     * - Xử lý ảnh ưu tiên OpenCV.js; nếu chưa sẵn sàng, app vẫn cho thao tác cơ bản.
+     */
+    (() => {
+      // ------------------------------
+      // Utils
+      // ------------------------------
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+      const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2));
+
+      function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+      function nowISO(){ return new Date().toISOString(); }
+      function roundToStep(value, step){
+        const s = Number(step);
+        if (!s || s <= 0) return value;
+        return Math.round(value / s) * s;
+      }
+      function downloadText(filename, text){
+        const blob = new Blob([text], {type: "application/octet-stream"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }
+      function toast(html, ms=3200){
+        const el = $("#toast");
+        el.innerHTML = html;
+        el.classList.add("show");
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => el.classList.remove("show"), ms);
+      }
+      function safeJsonParse(s){
+        try { return JSON.parse(s); } catch { return null; }
+      }
+
+      // ------------------------------
+      // Storage
+      // ------------------------------
+      const STORAGE_KEY = "omr_project_v1";
+
+      function defaultProject(){
+        return {
+          version: 1,
+          updatedAt: nowISO(),
+          exam: null,               // kỳ thi hiện tại
+          students: [],             // danh sách lớp
+          results: [],              // bảng kết quả
+        };
+      }
+
+      function loadProject(){
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const j = raw ? safeJsonParse(raw) : null;
+        if (j && j.version === 1) return j;
+        return defaultProject();
+      }
+      function saveProject(){
+        state.project.updatedAt = nowISO();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.project));
+        renderStatus();
+        renderStats();
+      }
+      function resetAll(){
+        localStorage.removeItem(STORAGE_KEY);
+        state.project = defaultProject();
+        state.runtime = defaultRuntime();
+        saveProject();
+        gotoStep(1);
+        toast("<b>Đã xoá toàn bộ dữ liệu</b> trên trình duyệt.");
+      }
+
+      // ------------------------------
+      // Parsing đáp án
+      // ------------------------------
+      function normalizeAnswerChar(ch){
+        if (!ch) return "";
+        const c = String(ch).trim().toUpperCase();
+        if (["A","B","C","D"].includes(c)) return c;
+        return "";
+      }
+      /**
+       * Hỗ trợ:
+       * - "1A,2B,3C"
+       * - "A,B,C,D"
+       * - "1:A 2:B"
+       * - xuống dòng tuỳ ý
+       */
+      function parseAnswerKey(text, n){
+        const cleaned = String(text || "")
+          .replace(/[，;]/g, ",")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        const answers = Array.from({length:n}, () => "");
+        if (!cleaned) return answers;
+
+        // Case 1: có số câu kèm chữ (1A, 2B...)
+        const pairs = cleaned.match(/(\d{1,3})\s*[:\-]?\s*([ABCD])/gi);
+        if (pairs && pairs.length >= 1){
+          for (const p of pairs){
+            const m = p.match(/(\d{1,3})\s*[:\-]?\s*([ABCD])/i);
+            if (!m) continue;
+            const idx = Number(m[1]) - 1;
+            if (idx >= 0 && idx < n) answers[idx] = normalizeAnswerChar(m[2]);
+          }
+          return answers;
+        }
+
+        // Case 2: list chữ A,B,C...
+        const tokens = cleaned.split(/[,| ]+/).map(t => normalizeAnswerChar(t)).filter(Boolean);
+        for (let i=0;i<Math.min(n, tokens.length);i++) answers[i] = tokens[i];
+        return answers;
+      }
+
+      // ------------------------------
+      // CSV students import
+      // ------------------------------
+      function parseCSV(text){
+        // parser nhẹ, phù hợp file đơn giản MSSV,HoTen,Lop
+        const lines = String(text || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        if (!lines.length) return [];
+        const header = lines[0].split(",").map(s => s.trim());
+        const idxM = header.findIndex(h => /mssv/i.test(h));
+        const idxH = header.findIndex(h => /ho\s*ten|hoten|name/i.test(h));
+        const idxL = header.findIndex(h => /lop|class/i.test(h));
+        const out = [];
+        for (let i=1;i<lines.length;i++){
+          const cols = lines[i].split(",").map(s => s.trim());
+          const mssv = cols[idxM] ?? cols[0] ?? "";
+          const name = cols[idxH] ?? cols[1] ?? "";
+          const cls = cols[idxL] ?? cols[2] ?? "";
+          if (!mssv) continue;
+          out.push({mssv, name, className: cls});
+        }
+        return out;
+      }
+
+      // ------------------------------
+      // OMR config (mẫu phiếu)
+      // ------------------------------
+      function defaultLayout(numQ){
+        // Mặc định chia đều 3 cột (để hỗ trợ đề 20/40 câu…).
+        // Người dùng có thể nhập thủ công số câu mỗi cột ở Bước 1.
+        const cols = Math.min(3, Math.max(1, Math.ceil(numQ / 15))); // <=15: 1 cột; <=30: 2 cột; còn lại: 3 cột
+        const base = Math.floor(numQ / cols);
+        const rem = numQ % cols;
+        const arr = Array.from({length: cols}, (_,i) => base + (i < rem ? 1 : 0));
+        const c1 = arr[0] || 0;
+        const c2 = arr[1] || 0;
+        const c3 = arr[2] || 0;
+        return {
+          columns: [c1, c2, c3].filter(x => x>0),
+          // hệ toạ độ chuẩn sau khi warp
+          warpW: 1000,
+          warpH: 1400,
+          // vùng bubble trong hệ toạ độ chuẩn (trừ lề)
+          marginX: 70,
+          marginY: 90,
+          bubbleSize: 30,
+          bubbleGap: 16,
+          optionGap: 34, // khoảng giữa A-B-C-D theo trục X
+          colGap: 40,
+        };
+      }
+
+      function buildColumnsFromInputs(numQ){
+        const raw = [
+          Number($("#col1Q")?.value || 0),
+          Number($("#col2Q")?.value || 0),
+          Number($("#col3Q")?.value || 0),
+        ].map(v => (Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0));
+
+        const hasAny = raw.some(v => v > 0);
+        if (!hasAny) return defaultLayout(numQ).columns;
+
+        // bỏ các cột 0 ở cuối
+        let cols = raw.slice();
+        while (cols.length && cols[cols.length-1] === 0) cols.pop();
+        cols = cols.slice(0,3);
+        if (!cols.length) return defaultLayout(numQ).columns;
+
+        const sum = cols.reduce((a,b)=>a+b,0);
+        if (sum !== numQ){
+          // điều chỉnh nhẹ: ưu tiên giữ cột 1..n-1, dồn phần chênh vào cột cuối
+          const head = cols.slice(0, -1).reduce((a,b)=>a+b,0);
+          cols[cols.length-1] = Math.max(0, numQ - head);
+        }
+        // nếu vẫn sai (trường hợp head > numQ) -> fallback chia đều
+        const sum2 = cols.reduce((a,b)=>a+b,0);
+        if (sum2 !== numQ) return defaultLayout(numQ).columns;
+        return cols;
+      }
+
+      // ------------------------------
+      // Image pipeline (OpenCV.js)
+      // ------------------------------
+      function cvReady(){
+        return !!(window.cv && window.cv.Mat);
+      }
+
+      function isImageTooDark(imgData){
+        // ước lượng nhanh: lấy sample pixel để đo độ sáng trung bình
+        const data = imgData.data;
+        const step = Math.max(4, Math.floor(data.length / (4 * 8000)));
+        let sum = 0, cnt = 0;
+        for (let i=0;i<data.length;i+=4*step){
+          const r=data[i], g=data[i+1], b=data[i+2];
+          sum += (0.2126*r + 0.7152*g + 0.0722*b);
+          cnt++;
+        }
+        const avg = sum / Math.max(1,cnt);
+        return avg < 65; // khá tối
+      }
+
+      function drawImageContain(ctx, img, w, h){
+        const r = Math.min(w/img.naturalWidth, h/img.naturalHeight);
+        const nw = img.naturalWidth*r, nh = img.naturalHeight*r;
+        const x = (w-nw)/2, y = (h-nh)/2;
+        ctx.clearRect(0,0,w,h);
+        ctx.drawImage(img, x,y,nw,nh);
+        return {x,y,nw,nh,scale:r};
+      }
+
+      function canvasToMat(canvas){
+        const ctx = canvas.getContext("2d");
+        const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+        const mat = cv.matFromImageData(imgData);
+        return {mat, imgData};
+      }
+
+      /**
+       * Tìm 4 marker vuông đen: lọc contour theo diện tích và độ vuông.
+       * Trả về 4 điểm (x,y) trong hệ toạ độ ảnh gốc (canvas).
+       */
+      function detectMarkers(srcMat){
+        const gray = new cv.Mat();
+        cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY, 0);
+        const blur = new cv.Mat();
+        cv.GaussianBlur(gray, blur, new cv.Size(5,5), 0);
+        const thr = new cv.Mat();
+        cv.adaptiveThreshold(blur, thr, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 31, 10);
+
+        const contours = new cv.MatVector();
+        const hierarchy = new cv.Mat();
+        cv.findContours(thr, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+        const cand = [];
+        const imgArea = srcMat.rows * srcMat.cols;
+        for (let i=0;i<contours.size();i++){
+          const c = contours.get(i);
+          const area = cv.contourArea(c);
+          if (area < imgArea * 0.0006) continue;       // bỏ quá nhỏ
+          if (area > imgArea * 0.05) continue;         // bỏ quá lớn
+          const rect = cv.boundingRect(c);
+          const ar = rect.width / Math.max(1, rect.height);
+          if (ar < 0.65 || ar > 1.45) continue;        // gần vuông
+          const peri = cv.arcLength(c, true);
+          const approx = new cv.Mat();
+          cv.approxPolyDP(c, approx, 0.04 * peri, true);
+          if (approx.rows < 4 || approx.rows > 8) { approx.delete(); continue; }
+
+          // độ "đặc" trong bounding box (để phân biệt chữ/đường)
+          const fill = area / Math.max(1, rect.width * rect.height);
+          if (fill < 0.35) { approx.delete(); continue; }
+
+          cand.push({area, rect, cx: rect.x + rect.width/2, cy: rect.y + rect.height/2});
+          approx.delete();
+        }
+
+        gray.delete(); blur.delete(); thr.delete(); contours.delete(); hierarchy.delete();
+
+        if (cand.length < 4) return null;
+        cand.sort((a,b) => b.area - a.area);
+        const top = cand.slice(0, 8); // lấy 8 ứng viên lớn nhất, rồi chọn 4 góc nhất
+
+        // chọn theo khoảng cách tới 4 góc ảnh
+        const W = srcMat.cols, H = srcMat.rows;
+        const corners = [
+          {name:"tl", x:0, y:0},
+          {name:"tr", x:W, y:0},
+          {name:"br", x:W, y:H},
+          {name:"bl", x:0, y:H},
+        ];
+        const picked = {};
+        for (const co of corners){
+          let best=null, bestD=Infinity;
+          for (const c of top){
+            const d = (c.cx - co.x)**2 + (c.cy - co.y)**2;
+            if (d < bestD){
+              bestD = d; best = c;
+            }
+          }
+          if (best) picked[co.name] = {x:best.cx, y:best.cy};
+        }
+        const pts = [picked.tl, picked.tr, picked.br, picked.bl].filter(Boolean);
+        if (pts.length !== 4) return null;
+        // kiểm tra không trùng nhau quá nhiều
+        const uniq = new Set(pts.map(p => `${Math.round(p.x/10)}_${Math.round(p.y/10)}`));
+        if (uniq.size < 4) return null;
+        return [picked.tl, picked.tr, picked.br, picked.bl];
+      }
+
+      function warpToCanonical(srcMat, pts4, layout){
+        const {warpW, warpH} = layout;
+        const srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+          pts4[0].x, pts4[0].y,
+          pts4[1].x, pts4[1].y,
+          pts4[2].x, pts4[2].y,
+          pts4[3].x, pts4[3].y,
+        ]);
+        const dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+          0, 0,
+          warpW, 0,
+          warpW, warpH,
+          0, warpH,
+        ]);
+        const M = cv.getPerspectiveTransform(srcTri, dstTri);
+        const dst = new cv.Mat();
+        cv.warpPerspective(srcMat, dst, M, new cv.Size(warpW, warpH), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+        srcTri.delete(); dstTri.delete(); M.delete();
+        return dst;
+      }
+
+      function preprocessForBubbles(warpedRGBA){
+        const gray = new cv.Mat();
+        cv.cvtColor(warpedRGBA, gray, cv.COLOR_RGBA2GRAY, 0);
+        const blur = new cv.Mat();
+        cv.GaussianBlur(gray, blur, new cv.Size(3,3), 0);
+        const thr = new cv.Mat();
+        cv.adaptiveThreshold(blur, thr, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 35, 9);
+        gray.delete(); blur.delete();
+        return thr; // binary INV: tô đen => pixel trắng (255)
+      }
+
+      function computeBubbleBoxes(numQ, layout){
+        const {warpW, warpH, marginX, marginY, bubbleSize, optionGap, colGap} = layout;
+        const cols = layout.columns;
+        const innerW = warpW - 2*marginX;
+        const innerH = warpH - 2*marginY;
+        const colW = (innerW - colGap*(cols.length-1)) / cols.length;
+        const boxes = []; // per question: {qIndex, options:[{x,y,w,h}]}
+        let q = 0;
+        for (let ci=0; ci<cols.length; ci++){
+          const count = cols[ci];
+          const x0 = marginX + ci*(colW + colGap);
+          // chia đều theo hàng
+          const rowH = innerH / count;
+          for (let r=0;r<count;r++){
+            if (q >= numQ) break;
+            const yCenter = marginY + r*rowH + rowH*0.55;
+            const opt = [];
+            const startX = x0 + colW*0.32;
+            for (let k=0;k<4;k++){
+              const x = startX + k*optionGap;
+              const y = yCenter - bubbleSize/2;
+              opt.push({x, y, w: bubbleSize, h: bubbleSize});
+            }
+            boxes.push({qIndex:q, options: opt});
+            q++;
+          }
+        }
+        return boxes;
+      }
+
+      function detectAnswersFromBinary(binaryMat, boxes, settings){
+        const minFill = clamp(Number(settings.minFill ?? 0.35), 0, 1);
+        const minDiff = clamp(Number(settings.minDiff ?? 0.10), 0, 1);
+        const needCheckConf = clamp(Number(settings.needCheckConf ?? 70), 0, 100);
+
+        const answers = [];
+        const confidences = [];
+        const classifications = []; // "OK" | "Trống" | "Tô nhiều đáp án" | "Không chắc"
+        const needCheck = [];       // true/false
+        const debug = []; // per question: fill ratios
+
+        const letters = ["A","B","C","D"];
+
+        for (const b of boxes){
+          const ratios = b.options.map((o) => {
+            const x = Math.round(o.x), y = Math.round(o.y);
+            const w = Math.round(o.w), h = Math.round(o.h);
+            const rect = new cv.Rect(clamp(x,0,binaryMat.cols-1), clamp(y,0,binaryMat.rows-1), clamp(w,1,binaryMat.cols-x), clamp(h,1,binaryMat.rows-y));
+            const roi = binaryMat.roi(rect);
+            const nz = cv.countNonZero(roi);
+            const ratio = nz / (rect.width * rect.height);
+            roi.delete();
+            return ratio;
+          });
+          debug.push(ratios);
+          const sorted = ratios.map((v,i)=>({v,i})).sort((a,b)=>b.v-a.v);
+          const best = sorted[0];
+          const second = sorted[1];
+
+          let ans = "";
+          let conf = 0;
+          let label = "";
+
+          if (best.v < minFill){
+            ans = "";
+            conf = 100;
+            label = "Trống";
+          } else {
+            const diff = best.v - second.v;
+            const rel = diff / Math.max(1e-6, best.v);
+            conf = clamp(Math.round( (0.35 + 0.65*clamp(rel,0,1)) * 100 ), 0, 100);
+            if (diff < minDiff){
+              // nhiều đáp án hoặc không chắc
+              const strong = ratios.filter(v => v >= minFill).length;
+              if (strong >= 2){
+                ans = letters[best.i]; // chọn tạm (để hiển thị), nhưng gắn cờ
+                label = "Tô nhiều đáp án";
+                conf = Math.min(conf, 55);
+              } else {
+                ans = letters[best.i];
+                label = "Không chắc";
+                conf = Math.min(conf, 65);
+              }
+            } else {
+              ans = letters[best.i];
+              label = "OK";
+            }
+          }
+
+          const isNeed = (label === "Tô nhiều đáp án" || label === "Không chắc" || (label === "OK" && conf < needCheckConf));
+
+          answers.push(ans);
+          confidences.push(conf);
+          classifications.push(label);
+          needCheck.push(isNeed);
+        }
+
+        return {answers, confidences, classifications, needCheck, debug};
+      }
+
+      // ------------------------------
+      // Grading
+      // ------------------------------
+      function gradeAnswers(studentAnswers, answerKey){
+        const n = answerKey.length;
+        const out = {
+          n,
+          correct: 0,
+          wrong: 0,
+          empty: 0,
+          needCheck: 0,
+          perQ: Array.from({length:n}, () => ({status:"", isNeedCheck:false})),
+        };
+        for (let i=0;i<n;i++){
+          const sa = normalizeAnswerChar(studentAnswers[i] || "");
+          const ka = normalizeAnswerChar(answerKey[i] || "");
+          if (!sa){
+            out.empty++;
+            out.perQ[i] = {status:"Trống", isNeedCheck:false};
+            continue;
+          }
+          if (!ka){
+            // nếu đáp án chuẩn không có (ít xảy ra) thì coi là cần kiểm tra
+            out.needCheck++;
+            out.perQ[i] = {status:"Cần kiểm tra", isNeedCheck:true};
+            continue;
+          }
+          if (sa === ka){
+            out.correct++;
+            out.perQ[i] = {status:"Đúng", isNeedCheck:false};
+          } else {
+            out.wrong++;
+            out.perQ[i] = {status:"Sai", isNeedCheck:false};
+          }
+        }
+        return out;
+      }
+
+      // ------------------------------
+      // State
+      // ------------------------------
+      function defaultRuntime(){
+        return {
+          step: 1,
+          // ảnh hiện tại
+          image: { file:null, imgEl:null, dataUrl:null },
+          // góc thủ công nếu cần
+          manual: { enabled:false, points:[] }, // points in canvas coordinates
+          // kết quả quét hiện tại (chưa lưu)
+          scan: null,
+          // cache: boxes
+          boxes: null,
+        };
+      }
+
+      const state = {
+        project: loadProject(),
+        runtime: defaultRuntime(),
+        settings: {
+          minFill: 0.35,
+          minDiff: 0.10,
+          needCheckConf: 70,
+        },
+        pwa: {deferredPrompt:null},
+      };
+
+      // ------------------------------
+      // Wizard UI
+      // ------------------------------
+      const steps = [
+        {n:1, title:"Tạo kỳ thi"},
+        {n:2, title:"Chụp bài"},
+        {n:3, title:"Đối chiếu"},
+        {n:4, title:"Xuất kết quả"},
+      ];
+
+      function renderWizardPills(){
+        const el = $("#wizardPills");
+        el.innerHTML = steps.map(s => {
+          const cls = s.n === state.runtime.step ? "active" : (s.n < state.runtime.step ? "done" : "");
+          return `<div class="step-pill ${cls}"><span class="n">${s.n}</span><span>${s.title}</span></div>`;
+        }).join("");
+      }
+
+      function gotoStep(n){
+        state.runtime.step = n;
+        $$(".step").forEach(sec => {
+          sec.style.display = (Number(sec.getAttribute("data-step")) === n) ? "" : "none";
+        });
+        renderWizardPills();
+        renderStatus();
+        if (n === 2) renderMaDeSelect();
+        if (n === 4) {
+          syncEssayUI();
+          updateScoreUI();
+        }
+      }
+
+      function syncEssayUI(){
+        const ex = state.project.exam;
+        const wrap = $("#essayScoreWrap");
+        const input = $("#essayScore");
+        if (!wrap || !input || !ex) return;
+        const hasEssay = Number(ex.essayMax || 0) > 0;
+        wrap.style.display = hasEssay ? "" : "none";
+        if (!hasEssay){
+          input.value = 0;
+          input.disabled = true;
+        } else {
+          input.disabled = false;
+        }
+      }
+
+      // ------------------------------
+      // Exam management
+      // ------------------------------
+      function ensureExam(){
+        if (state.project.exam) return;
+        state.project.exam = {
+          id: uid(),
+          createdAt: nowISO(),
+          courseName: "",
+          courseCode: "",
+          className: "",
+          semester: "",
+          numQuestions: 25,
+          pointsPerQuestion: 0.25,
+          essayMax: 0,
+          roundingStep: 0,
+          layout: defaultLayout(25),
+          sheetType: "marker", // "marker" | "table"
+          versions: {}, // maDe -> answers[]
+        };
+      }
+
+      function readExamFormToState(){
+        ensureExam();
+        const ex = state.project.exam;
+        ex.courseName = $("#courseName").value.trim();
+        ex.courseCode = $("#courseCode").value.trim();
+        ex.className = $("#className").value.trim();
+        ex.semester = $("#semester").value.trim();
+        ex.numQuestions = clamp(Number($("#numQ").value || 25), 1, 200);
+        ex.pointsPerQuestion = Number($("#ppq").value || 0);
+        ex.essayMax = Number($("#essayMax").value || 0);
+        ex.roundingStep = Number($("#rounding").value || 0);
+        ex.sheetType = ($("#sheetType")?.value || ex.sheetType || "marker");
+        ex.layout = defaultLayout(ex.numQuestions);
+        ex.layout.columns = buildColumnsFromInputs(ex.numQuestions);
+      }
+
+      function writeExamStateToForm(){
+        ensureExam();
+        const ex = state.project.exam;
+        $("#courseName").value = ex.courseName || "";
+        $("#courseCode").value = ex.courseCode || "";
+        $("#className").value = ex.className || "";
+        $("#semester").value = ex.semester || "";
+        $("#numQ").value = ex.numQuestions ?? 25;
+        $("#ppq").value = ex.pointsPerQuestion ?? 0.25;
+        $("#essayMax").value = ex.essayMax ?? 0;
+        $("#rounding").value = String(ex.roundingStep ?? 0);
+        $("#sheetType").value = ex.sheetType || "marker";
+        const cols = ex.layout?.columns || defaultLayout(ex.numQuestions ?? 25).columns;
+        $("#col1Q").value = cols[0] ?? "";
+        $("#col2Q").value = cols[1] ?? 0;
+        $("#col3Q").value = cols[2] ?? 0;
+        syncEssayUI();
+      }
+
+      function addOrUpdateVersion(){
+        readExamFormToState();
+        const ex = state.project.exam;
+        const maDe = $("#maDe").value.trim();
+        if (!maDe) return toast("Vui lòng nhập <b>Mã đề</b>.");
+        const answers = parseAnswerKey($("#answerKeyText").value, ex.numQuestions);
+        if (!answers.some(Boolean)) return toast("Chưa thấy đáp án. Hãy dán đáp án chuẩn vào ô.");
+        ex.versions[maDe] = answers;
+        saveProject();
+        toast(`Đã lưu đáp án cho mã đề <b>${maDe}</b>.`);
+        renderMaDeSelect();
+        renderVersionsList(true);
+      }
+
+      function renderVersionsList(toggleOnly){
+        const box = $("#versionsList");
+        if (toggleOnly){
+          box.style.display = "";
+        } else {
+          box.style.display = (box.style.display === "none" ? "" : "none");
+        }
+        const ex = state.project.exam;
+        const items = $("#versionsItems");
+        if (!ex || !Object.keys(ex.versions).length){
+          items.innerHTML = `<div class="muted">Chưa có mã đề.</div>`;
+          return;
+        }
+        items.innerHTML = Object.keys(ex.versions).sort().map(md => {
+          const ans = ex.versions[md] || [];
+          const preview = ans.slice(0, 12).map(a => a || "_").join("");
+          return `<button class="btn" style="width:100%;text-align:left;margin:6px 0" data-md="${md}">
+            <b>Mã đề ${md}</b> <span class="muted">— ${preview}${ans.length>12?"…":""}</span>
+          </button>`;
+        }).join("");
+        items.querySelectorAll("button[data-md]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            $("#maDe").value = btn.getAttribute("data-md");
+            $("#answerKeyText").value = (state.project.exam.versions[$("#maDe").value] || []).map((a,i)=> a?`${i+1}${a}`:"").filter(Boolean).join(", ");
+            toast("Đã đưa đáp án lên ô dán. Bạn có thể sửa rồi nhấn <b>Thêm/ cập nhật mã đề</b>.");
+          });
+        });
+      }
+
+      function renderMaDeSelect(){
+        const sel = $("#maDeSelect");
+        sel.innerHTML = "";
+        const ex = state.project.exam;
+        const keys = ex ? Object.keys(ex.versions) : [];
+        if (!keys.length){
+          sel.innerHTML = `<option value="">(Chưa có mã đề)</option>`;
+          return;
+        }
+        for (const md of keys.sort()){
+          const opt = document.createElement("option");
+          opt.value = md;
+          opt.textContent = md;
+          sel.appendChild(opt);
+        }
+      }
+
+      // ------------------------------
+      // Students import + auto fill
+      // ------------------------------
+      function setStudents(list){
+        const map = new Map();
+        for (const s of list){
+          if (!s.mssv) continue;
+          map.set(String(s.mssv).trim(), {
+            mssv: String(s.mssv).trim(),
+            name: String(s.name || "").trim(),
+            className: String(s.className || "").trim(),
+          });
+        }
+        state.project.students = Array.from(map.values());
+        saveProject();
+        toast(`Đã nhập <b>${state.project.students.length}</b> sinh viên.`);
+      }
+
+      function autofillStudentByMSSV(){
+        const m = $("#mssv").value.trim();
+        if (!m) return;
+        const s = state.project.students.find(x => String(x.mssv).trim() === m);
+        if (!s) return;
+        if (!$("#fullName").value.trim()) $("#fullName").value = s.name || "";
+        if (!$("#studentClass").value.trim()) $("#studentClass").value = s.className || "";
+      }
+
+      // ------------------------------
+      // Scan flow
+      // ------------------------------
+      function setPreview(imgEl){
+        const area = $("#previewArea");
+        area.innerHTML = "";
+        const c = document.createElement("div");
+        c.className = "canvas-wrap";
+        const canvas = document.createElement("canvas");
+        canvas.width = 1200;
+        canvas.height = 1600;
+        c.appendChild(canvas);
+        const hint = document.createElement("div");
+        hint.className = "overlay-hint";
+        hint.innerHTML = "Ảnh xem trước";
+        c.appendChild(hint);
+        area.appendChild(c);
+        const ctx = canvas.getContext("2d");
+        drawImageContain(ctx, imgEl, canvas.width, canvas.height);
+        $("#btnToStep3").disabled = false;
+      }
+
+      async function loadImageFile(file){
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          state.runtime.image = {file, imgEl: img, dataUrl: null};
+          setPreview(img);
+          URL.revokeObjectURL(url);
+        };
+        img.onerror = () => {
+          toast("Không đọc được ảnh. Vui lòng chọn ảnh khác.");
+          URL.revokeObjectURL(url);
+        };
+        img.src = url;
+      }
+
+      function getActiveAnswerKey(){
+        const ex = state.project.exam;
+        const md = $("#maDeSelect").value;
+        if (!ex || !md) return null;
+        return ex.versions[md] || null;
+      }
+
+      function computeOverallSummary(scan){
+        const n = scan.numQuestions;
+        const need = scan.flags.filter(f => f === "Cần kiểm tra").length;
+        const empty = scan.answers.filter(a => !a).length;
+        return {n, need, empty};
+      }
+
+      function drawOverlayOnCanvas(canvas, imgEl, overlay){
+        const ctx = canvas.getContext("2d");
+        const fit = drawImageContain(ctx, imgEl, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(fit.x, fit.y);
+        ctx.scale(fit.scale, fit.scale);
+        ctx.lineWidth = 6 / fit.scale;
+        ctx.strokeStyle = "rgba(11,95,255,.95)";
+
+        if (overlay && overlay.corners){
+          const pts = overlay.corners;
+          ctx.beginPath();
+          ctx.moveTo(pts[0].x, pts[0].y);
+          ctx.lineTo(pts[1].x, pts[1].y);
+          ctx.lineTo(pts[2].x, pts[2].y);
+          ctx.lineTo(pts[3].x, pts[3].y);
+          ctx.closePath();
+          ctx.stroke();
+        }
+
+        // nếu có vùng bubble được dự đoán (trên ảnh warp), tạm chỉ show khung corners.
+        ctx.restore();
+      }
+
+      function setScanView(mode){
+        // mode: "warp" | "orig"
+        state.runtime.viewMode = mode;
+        const w = $("#warpCanvas");
+        const o = $("#origCanvas");
+        if (!w || !o) return;
+        if (mode === "orig"){
+          w.style.display = "none";
+          o.style.display = "";
+        } else {
+          o.style.display = "none";
+          w.style.display = "";
+        }
+      }
+
+      /**
+       * Tự tìm bubble theo “khoảng cách” (phiếu dạng bảng, không marker) bằng cách:
+       * - Sau khi warp và threshold,
+       * - Dò theo tổng pixel theo trục X để tìm vị trí các cột A/B/C/D,
+       * - Dò theo tổng pixel theo trục Y để tìm vị trí các hàng (từng câu),
+       * - Gán Q1..Qn theo thứ tự dựa vào cấu hình số câu mỗi cột.
+       *
+       * Cách này thường ổn định hơn HoughCircles với ảnh chụp/scan mờ.
+       */
+      function computeBubbleBoxesByProjection(binaryMat, numQ, columns, layout){
+        const W = binaryMat.cols, H = binaryMat.rows;
+        const bubbleSize = Number(layout?.bubbleSize || 30);
+
+        function smooth(arr, win){
+          const w = Math.max(3, win|0);
+          const half = (w/2)|0;
+          const out = new Array(arr.length).fill(0);
+          let s = 0;
+          for (let i=0;i<arr.length;i++){
+            s += arr[i];
+            if (i>=w) s -= arr[i-w];
+            if (i>=w-1) out[i-half] = s / w;
+          }
+          return out;
+        }
+        function pickPeaks1D(arr, {minVal, minDist, maxPeaks=50, from=0, to=arr.length-1}){
+          const peaks = [];
+          for (let i=Math.max(1,from+1); i<Math.min(arr.length-1,to-1); i++){
+            if (arr[i] > arr[i-1] && arr[i] >= arr[i+1] && arr[i] >= minVal){
+              peaks.push({i, v: arr[i]});
+            }
+          }
+          peaks.sort((a,b)=>b.v-a.v);
+          const picked = [];
+          for (const p of peaks){
+            if (picked.length >= maxPeaks) break;
+            if (picked.every(x => Math.abs(x.i - p.i) >= minDist)) picked.push(p);
+          }
+          picked.sort((a,b)=>a.i-b.i);
+          return picked;
+        }
+
+        // colSum: 1 x W
+        const colSum = new cv.Mat();
+        cv.reduce(binaryMat, colSum, 0, cv.REDUCE_SUM, cv.CV_32S);
+        const colArr = Array.from(colSum.data32S);
+        colSum.delete();
+        const colSm = smooth(colArr, 21);
+        const colMax = Math.max(...colSm);
+        if (!Number.isFinite(colMax) || colMax <= 0) return null;
+        const colPeaks = pickPeaks1D(colSm, {
+          minVal: colMax * 0.25,
+          minDist: Math.max(10, Math.round(W * 0.018)),
+          maxPeaks: 80
+        });
+        if (colPeaks.length < 4) return null;
+
+        const blocks = Math.max(1, Math.min(3, columns.length || 3));
+        const blockCols = [];
+        for (let bi=0; bi<blocks; bi++){
+          const xFrom = Math.round((bi/blocks) * W);
+          const xTo = Math.round(((bi+1)/blocks) * W);
+          const cand = colPeaks.filter(p => p.i > xFrom + W*0.03 && p.i < xTo - W*0.03);
+          // lấy 4 peak mạnh nhất trong vùng này
+          const top = cand.slice().sort((a,b)=>b.v-a.v).slice(0, 10);
+          const picked = [];
+          for (const p of top){
+            if (picked.length >= 4) break;
+            if (picked.every(x => Math.abs(x - p.i) >= Math.max(10, Math.round(W*0.02)))) picked.push(p.i);
+          }
+          picked.sort((a,b)=>a-b);
+          if (picked.length < 4){
+            // fallback: chia đều nếu không đủ peak
+            const rw = (xTo - xFrom);
+            const fb = [0,1,2,3].map(k => xFrom + Math.round((k+0.55) * rw/4));
+            blockCols.push(fb);
+          } else {
+            blockCols.push(picked.slice(0,4));
+          }
+        }
+
+        // row peaks theo từng block (để tránh nhiễu phần khác)
+        const boxesByQ = Array.from({length:numQ}, (_,i)=>({qIndex:i, options:[]}));
+        let qBase = 0;
+        for (let bi=0; bi<blocks; bi++){
+          const rowsExpected = columns[bi] || 0;
+          if (!rowsExpected) continue;
+          const colsX = blockCols[bi];
+          const x0 = clamp(Math.round(colsX[0] - bubbleSize*2.2), 0, W-1);
+          const x1 = clamp(Math.round(colsX[3] + bubbleSize*2.2), 1, W);
+          const roi = binaryMat.roi(new cv.Rect(x0, 0, x1-x0, H));
+          const rowSum = new cv.Mat();
+          cv.reduce(roi, rowSum, 1, cv.REDUCE_SUM, cv.CV_32S); // H x 1
+          roi.delete();
+          const rowArr = Array.from(rowSum.data32S);
+          rowSum.delete();
+
+          // bỏ phần header trên cùng (thường là dòng chữ "Câu A B C D")
+          const yStart = Math.round(H * 0.12);
+          for (let i=0;i<yStart;i++) rowArr[i] = 0;
+
+          const rowSm = smooth(rowArr, 17);
+          const rowMax = Math.max(...rowSm);
+          if (!Number.isFinite(rowMax) || rowMax <= 0) continue;
+          const approxDist = Math.max(18, Math.round((H - yStart) / (rowsExpected + 2)));
+          const rowPeaks = pickPeaks1D(rowSm, {
+            minVal: rowMax * 0.25,
+            minDist: Math.round(approxDist * 0.55),
+            maxPeaks: rowsExpected + 12,
+            from: yStart,
+            to: H-1
+          });
+          // lấy đúng rowsExpected peak mạnh nhất rồi sort theo y
+          const topRows = rowPeaks.slice().sort((a,b)=>b.v-a.v).slice(0, rowsExpected).sort((a,b)=>a.i-b.i);
+          if (topRows.length < Math.min(5, rowsExpected)) continue;
+
+          for (let ri=0; ri<topRows.length && (qBase+ri)<numQ; ri++){
+            const cy = topRows[ri].i;
+            const opts = colsX.map(cx => ({
+              x: cx - bubbleSize/2,
+              y: cy - bubbleSize/2,
+              w: bubbleSize,
+              h: bubbleSize
+            }));
+            boxesByQ[qBase+ri] = {qIndex:(qBase+ri), options: opts};
+          }
+          qBase += rowsExpected;
+        }
+
+        if (boxesByQ.filter(b => b.options?.length===4).length < Math.min(numQ, 8)) return null;
+        return boxesByQ;
+      }
+
+      /**
+       * Tự tìm bubble theo vòng tròn (phiếu dạng bảng, không marker).
+       * Ý tưởng:
+       * - Sau khi người dùng chọn 4 góc và app warp về ảnh thẳng,
+       * - Dùng HoughCircles tìm các vòng tròn,
+       * - Nhóm theo X để suy ra các cột A/B/C/D của từng khối,
+       * - Nhóm theo Y để suy ra từng câu,
+       * - Gán Q1..Qn theo thứ tự (dựa vào cấu hình số câu mỗi cột).
+       */
+      function computeBubbleBoxesByCircles(warpedRGBA, binaryMat, numQ, columns){
+        const gray = new cv.Mat();
+        cv.cvtColor(warpedRGBA, gray, cv.COLOR_RGBA2GRAY, 0);
+        cv.medianBlur(gray, gray, 5);
+
+        const circles = new cv.Mat();
+        const W = warpedRGBA.cols, H = warpedRGBA.rows;
+        const minR = Math.round(W * 0.010); // ~10 với W=1000
+        const maxR = Math.round(W * 0.022); // ~22 với W=1000
+        const minDist = Math.round(W * 0.022);
+
+        // param2 càng nhỏ => bắt nhiều vòng tròn hơn (nhưng dễ nhiễu)
+        cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1, minDist, 120, 28, minR, maxR);
+        gray.delete();
+
+        const pts = [];
+        if (!circles.empty()){
+          for (let i=0;i<circles.cols;i++){
+            const x = circles.data32F[i*3];
+            const y = circles.data32F[i*3+1];
+            const r = circles.data32F[i*3+2];
+            // bỏ những vòng quá sát mép (hay là nhiễu)
+            if (x < 20 || x > W-20 || y < 20 || y > H-20) continue;
+            pts.push({x, y, r});
+          }
+        }
+        circles.delete();
+        if (pts.length < Math.min(16, numQ*2)) return null; // quá ít vòng tròn => fail
+
+        // 1) gom cụm theo X để ra các cột bubble
+        const sortedX = pts.slice().sort((a,b)=>a.x-b.x);
+        const avgR = sortedX.reduce((s,p)=>s+p.r,0) / sortedX.length;
+        const splitDx = avgR * 4.2;
+        const xClusters = [];
+        for (const p of sortedX){
+          if (!xClusters.length){
+            xClusters.push({xs:[p.x], center:p.x});
+            continue;
+          }
+          const last = xClusters[xClusters.length-1];
+          if (Math.abs(p.x - last.center) > splitDx){
+            xClusters.push({xs:[p.x], center:p.x});
+          } else {
+            last.xs.push(p.x);
+            last.center = last.xs.reduce((a,b)=>a+b,0)/last.xs.length;
+          }
+        }
+        // cần ít nhất 4 cột (A-D); thường là 12 cột (3 khối)
+        if (xClusters.length < 4) return null;
+        // nếu nhiều hơn cần thiết: lấy 4*blocks theo columns.length
+        const blocks = columns.length;
+        const need = 4 * blocks;
+        const centers = xClusters.map(c=>c.center);
+        // nếu detect dư cột do nhiễu, lọc bằng cách lấy các center nằm trong khoảng giữa ảnh
+        let useCenters = centers;
+        if (centers.length > need){
+          const mid = centers.filter(x => x > W*0.10 && x < W*0.95);
+          useCenters = mid.length >= need ? mid : centers;
+        }
+        useCenters = useCenters.slice(0, need);
+        useCenters.sort((a,b)=>a-b);
+
+        const blockCols = [];
+        for (let bi=0; bi<blocks; bi++){
+          blockCols.push(useCenters.slice(bi*4, bi*4+4));
+        }
+
+        // 2) chia pts thành từng block theo khoảng cách tới cụm X
+        const blockPts = Array.from({length:blocks}, () => []);
+        for (const p of pts){
+          // tìm block gần nhất dựa theo khoảng cách tới cột B (hoặc trung bình 4 cột)
+          let bestBi = 0, bestD = Infinity;
+          for (let bi=0; bi<blocks; bi++){
+            const cx = (blockCols[bi][0]+blockCols[bi][3])/2;
+            const d = Math.abs(p.x - cx);
+            if (d < bestD){ bestD = d; bestBi = bi; }
+          }
+          blockPts[bestBi].push(p);
+        }
+
+        // 3) trong mỗi block: nhóm theo hàng (Y)
+        const yThresh = avgR * 3.0;
+        const boxesByQ = Array.from({length:numQ}, (_,i)=>({qIndex:i, options:[]}));
+        let qBase = 0;
+        for (let bi=0; bi<blocks; bi++){
+          const rowsExpected = columns[bi] || 0;
+          const ptsB = blockPts[bi].slice().sort((a,b)=>a.y-b.y);
+          const rows = [];
+          for (const p of ptsB){
+            // gán vào row gần nhất
+            let placed = false;
+            for (const r of rows){
+              if (Math.abs(p.y - r.centerY) <= yThresh){
+                r.items.push(p);
+                r.centerY = r.items.reduce((s,t)=>s+t.y,0)/r.items.length;
+                placed = true;
+                break;
+              }
+            }
+            if (!placed){
+              rows.push({items:[p], centerY:p.y});
+            }
+          }
+          rows.sort((a,b)=>a.centerY-b.centerY);
+          // nếu rows detect nhiều, lấy gần rowsExpected (cắt bớt nhiễu)
+          const useRows = rowsExpected ? rows.slice(0, rowsExpected) : rows;
+
+          for (let ri=0; ri<useRows.length && (qBase+ri)<numQ; ri++){
+            const row = useRows[ri];
+            const y = row.centerY;
+            const centersX = blockCols[bi];
+            const rad = avgR * 1.08;
+            const opts = centersX.map((cx) => ({
+              x: cx - rad, y: y - rad, w: rad*2, h: rad*2
+            }));
+            boxesByQ[qBase+ri] = {qIndex:(qBase+ri), options: opts};
+          }
+          qBase += rowsExpected;
+        }
+
+        // validate
+        if (boxesByQ.filter(b => b.options?.length===4).length < Math.min(numQ, 8)) return null;
+        return boxesByQ;
+      }
+
+      function drawWarpOverlay(canvas, warpedMatRGBA, boxes, scan, key){
+        // hiển thị ảnh đã căn phối cảnh (warp) + overlay các câu
+        try { cv.imshow(canvas, warpedMatRGBA); } catch {}
+        const ctx = canvas.getContext("2d");
+        ctx.save();
+        ctx.lineWidth = 2;
+
+        for (let i=0;i<boxes.length;i++){
+          const b = boxes[i];
+          const sv = normalizeAnswerChar(scan.finalAnswers[i] || "");
+          const gv = normalizeAnswerChar(key[i] || "");
+          const isNeed = !!scan.needCheck?.[i];
+
+          let color = "rgba(148,163,184,.95)"; // xám
+          if (isNeed) color = "rgba(245,158,11,.95)"; // vàng
+          else if (!sv) color = "rgba(148,163,184,.95)";
+          else if (sv === gv) color = "rgba(34,197,94,.95)";
+          else color = "rgba(239,68,68,.95)";
+
+          // vẽ khung bao 4 bubble
+          const xs = b.options.map(o => o.x);
+          const ys = b.options.map(o => o.y);
+          const xe = b.options.map(o => o.x + o.w);
+          const ye = b.options.map(o => o.y + o.h);
+          const x0 = Math.min(...xs) - 6;
+          const y0 = Math.min(...ys) - 6;
+          const x1 = Math.max(...xe) + 6;
+          const y1 = Math.max(...ye) + 6;
+          ctx.strokeStyle = color;
+          ctx.globalAlpha = isNeed ? 0.95 : 0.65;
+          ctx.strokeRect(x0, y0, x1-x0, y1-y0);
+        }
+        ctx.restore();
+      }
+
+      function renderReviewTable(){
+        const scan = state.runtime.scan;
+        const ex = state.project.exam;
+        const key = getActiveAnswerKey();
+        if (!scan || !ex || !key) return;
+
+        const onlyNeed = $("#onlyNeedCheck").checked;
+        const tbody = $("#reviewRows");
+        tbody.innerHTML = "";
+
+        const g = gradeAnswers(scan.finalAnswers, key);
+        for (let i=0;i<ex.numQuestions;i++){
+          const sv = scan.finalAnswers[i] || "";
+          const gv = key[i] || "";
+          const conf = scan.confidences[i] ?? 0;
+          const cls = scan.classifications?.[i] || "OK";
+          const isNeed = !!scan.needCheck?.[i];
+          const status = (sv && gv) ? (sv === gv ? "Đúng" : "Sai") : (sv ? "Sai" : "Trống");
+          if (onlyNeed && !isNeed) continue;
+
+          const tagClass = (status === "Đúng") ? "ok" : (status === "Sai" ? "bad" : "empty");
+          const tagText = isNeed ? (cls === "OK" ? "Cần kiểm tra" : cls) : status;
+          const tagColor = isNeed ? "warn" : tagClass;
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><b>Q${i+1}</b></td>
+            <td>${sv || "<span class='muted'>(trống)</span>"}</td>
+            <td>${gv || "<span class='muted'>(chưa có)</span>"}</td>
+            <td>${conf}%</td>
+            <td><span class="tag ${tagColor}">${tagText}</span></td>
+            <td>
+              <select data-q="${i}" style="width:86px">
+                <option value="">(trống)</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </td>
+          `;
+          const sel = tr.querySelector("select");
+          sel.value = sv;
+          sel.addEventListener("change", () => {
+            const q = Number(sel.getAttribute("data-q"));
+            scan.finalAnswers[q] = sel.value;
+            scan.manualEdits[q] = true;
+            renderReviewTable();
+            updateScoreUI();
+          });
+          tbody.appendChild(tr);
+        }
+
+        const sum = computeOverallSummary(scan);
+        const need = scan.needCheck?.filter(Boolean).length || 0;
+        $("#summaryText").textContent = `Đã đọc ${sum.n} câu — ${need} câu cần kiểm tra — ${sum.empty} câu trống`;
+      }
+
+      function updateScoreUI(){
+        const ex = state.project.exam;
+        const scan = state.runtime.scan;
+        const key = getActiveAnswerKey();
+        const box = $("#scoreBox");
+        if (!ex || !scan || !key){
+          box.innerHTML = "Chưa có dữ liệu quét.";
+          $("#btnSaveResult").disabled = true;
+          return;
+        }
+        const g = gradeAnswers(scan.finalAnswers, key);
+        const scoreMC = g.correct * Number(ex.pointsPerQuestion || 0);
+        const essay = (Number(ex.essayMax || 0) > 0) ? Number($("#essayScore").value || 0) : 0;
+        const totalRaw = scoreMC + essay;
+        const total = roundToStep(totalRaw, Number(ex.roundingStep || 0));
+
+        const warns = [];
+        const needCheck = scan.needCheck?.filter(Boolean).length || 0;
+        if (needCheck) warns.push(`Có <b>${needCheck}</b> câu cần kiểm tra.`);
+        if (total > 10.0001) warns.push(`<span class="danger-text"><b>Cảnh báo:</b> Tổng điểm vượt quá 10.</span>`);
+        if (Number(ex.essayMax || 0) > 0 && essay > Number(ex.essayMax || 0) + 1e-9) warns.push(`<span class="danger-text"><b>Cảnh báo:</b> Điểm tự luận vượt “tối đa”.</span>`);
+
+        box.innerHTML = `
+          <div><b>Trắc nghiệm:</b> ${g.correct}/${ex.numQuestions} đúng → <b>${scoreMC.toFixed(2)}</b> điểm</div>
+          <div><b>Tự luận:</b> ${essay.toFixed(2)} (tối đa ${Number(ex.essayMax||0).toFixed(2)})</div>
+          <div class="hr"></div>
+          <div><b>Tổng:</b> ${total.toFixed(2)} <span class="muted">(trước làm tròn: ${totalRaw.toFixed(2)})</span></div>
+          <div style="margin-top:8px">${warns.join("<br>") || "<span class='muted'>Không có cảnh báo.</span>"}</div>
+        `;
+        $("#btnSaveResult").disabled = false;
+      }
+
+      async function runScan(){
+        readExamFormToState();
+        const ex = state.project.exam;
+        const imgEl = state.runtime.image.imgEl;
+        const key = getActiveAnswerKey();
+        if (!ex) return toast("Chưa có kỳ thi.");
+        if (!key) return toast("Chưa chọn mã đề hoặc chưa có đáp án chuẩn.");
+        if (!imgEl) return toast("Chưa có ảnh.");
+
+        const origCanvas = $("#origCanvas");
+        const warpCanvas = $("#warpCanvas");
+        // luôn bắt đầu bằng preview ảnh gốc (để marker/manual corners nhất quán)
+        origCanvas.width = 1200;
+        origCanvas.height = 1600;
+        const octx = origCanvas.getContext("2d");
+        drawImageContain(octx, imgEl, origCanvas.width, origCanvas.height);
+        setScanView("orig");
+
+        const imgData = octx.getImageData(0,0,origCanvas.width,origCanvas.height);
+        if (isImageTooDark(imgData)){
+          toast("<b>Ảnh quá tối</b>. Hãy chụp lại nơi sáng hơn.", 5000);
+        }
+
+        $("#scanHint").innerHTML = cvReady()
+          ? "Đang quét… (có thể mất vài giây)"
+          : "Đang chờ thư viện quét ảnh (OpenCV.js)…";
+
+        if (!cvReady()){
+          toast("Chưa tải xong OpenCV.js. Vui lòng đợi vài giây rồi nhấn <b>Quét lại</b>.");
+          return;
+        }
+
+        // 1) tạo Mat từ canvas preview (đã contain)
+        const {mat: srcMat} = canvasToMat(origCanvas);
+
+        // 2) lấy 4 góc (marker hoặc thủ công)
+        let corners = null;
+        if (state.runtime.manual.enabled && state.runtime.manual.points.length === 4){
+          // quy đổi từ canvas => ảnh gốc (canvas đang ở đúng kích thước drawImageContain)
+          corners = state.runtime.manual.points.map(p => ({x:p.x, y:p.y}));
+        } else if (ex.sheetType === "marker") {
+          corners = detectMarkers(srcMat);
+        } else {
+          // phiếu dạng bảng: thường không có marker -> yêu cầu chọn thủ công
+          corners = null;
+        }
+        if (!corners){
+          srcMat.delete();
+          $("#scanHint").innerHTML = "<b>Chưa có 4 góc để căn ảnh</b>. Hãy bấm “Chọn 4 góc thủ công”.";
+          $("#btnToStep4").disabled = true;
+          toast("Hãy chọn 4 góc vùng trắc nghiệm (Trên trái → Trên phải → Dưới phải → Dưới trái) rồi quét lại.", 5200);
+          drawOverlayOnCanvas(origCanvas, imgEl, null);
+          return;
+        }
+
+        // 3) warp về hệ chuẩn
+        const layout = ex.layout || defaultLayout(ex.numQuestions);
+        const warped = warpToCanonical(srcMat, corners, layout);
+        const bin = preprocessForBubbles(warped);
+
+        // 4) box bubbles
+        let boxes = null;
+        if (ex.sheetType === "table"){
+          boxes = computeBubbleBoxesByProjection(bin, ex.numQuestions, layout.columns, layout);
+          if (!boxes) boxes = computeBubbleBoxesByCircles(warped, bin, ex.numQuestions, layout.columns);
+          if (!boxes){
+            // fallback (cố định) để không "đơ" app
+            boxes = computeBubbleBoxes(ex.numQuestions, layout);
+            toast("Không tự nhận được bố cục ô trắc nghiệm. Bạn thử chụp rõ hơn, hoặc chọn 4 góc sát vùng trắc nghiệm hơn.", 5200);
+          }
+        } else {
+          boxes = computeBubbleBoxes(ex.numQuestions, layout);
+        }
+
+        // 5) detect answers
+        const settings = {
+          minFill: Number($("#minFill").value),
+          minDiff: Number($("#minDiff").value),
+          needCheckConf: Number($("#needCheckConf").value),
+        };
+        const det = detectAnswersFromBinary(bin, boxes, settings);
+
+        // 6) build scan object
+        const scan = {
+          scanId: uid(),
+          createdAt: nowISO(),
+          numQuestions: ex.numQuestions,
+          maDe: $("#maDeSelect").value,
+          answers: det.answers.slice(),
+          finalAnswers: det.answers.slice(), // sẽ bị sửa tay
+          confidences: det.confidences.slice(),
+          classifications: det.classifications.slice(),
+          needCheck: det.needCheck.slice(),
+          manualEdits: {}, // qIndex -> true
+          overlay: {corners},
+        };
+
+        // 7) cleanup
+        srcMat.delete(); bin.delete();
+
+        state.runtime.scan = scan;
+        state.runtime.boxes = boxes;
+        $("#scanHint").innerHTML = "Đã quét xong. Hãy chuyển qua “Ảnh gốc” để đối chiếu, và kiểm tra các câu màu vàng trước khi xác nhận.";
+
+        // hiển thị ảnh warp + overlay từng câu
+        warpCanvas.width = layout.warpW;
+        warpCanvas.height = layout.warpH;
+        drawWarpOverlay(warpCanvas, warped, boxes, scan, key);
+        // ảnh gốc + overlay 4 góc đã chọn/tìm được
+        drawOverlayOnCanvas(origCanvas, imgEl, scan.overlay);
+        setScanView("warp");
+        warped.delete();
+
+        renderReviewTable();
+        updateScoreUI();
+        $("#btnToStep4").disabled = false;
+      }
+
+      // ------------------------------
+      // Manual corners selection
+      // ------------------------------
+      function enableManualCorners(){
+        state.runtime.manual.enabled = true;
+        state.runtime.manual.points = [];
+        const canvas = $("#origCanvas");
+        const hint = $("#scanHint");
+        // đảm bảo đang nhìn ảnh gốc để chọn góc
+        canvas.width = 1200;
+        canvas.height = 1600;
+        const imgEl = state.runtime.image.imgEl;
+        if (imgEl){
+          const ctx = canvas.getContext("2d");
+          drawImageContain(ctx, imgEl, canvas.width, canvas.height);
+        }
+        setScanView("orig");
+        state.runtime.scan = null;
+        $("#btnToStep4").disabled = true;
+        hint.innerHTML = "<b>Chọn 4 góc</b>: chạm/ click theo thứ tự <b>Trên trái → Trên phải → Dưới phải → Dưới trái</b>.";
+        toast("Chạm 4 góc theo thứ tự: Trên trái → Trên phải → Dưới phải → Dưới trái.", 6000);
+
+        const onClick = (ev) => {
+          const rect = canvas.getBoundingClientRect();
+          const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
+          const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
+          state.runtime.manual.points.push({x, y});
+          drawManualPoints(canvas, state.runtime.manual.points);
+          if (state.runtime.manual.points.length >= 4){
+            canvas.removeEventListener("click", onClick);
+            hint.innerHTML = "Đã chọn đủ 4 góc. Nhấn <b>Quét lại</b>.";
+            toast("Đã chọn 4 góc. Nhấn <b>Quét lại</b> để app căn ảnh và đọc đáp án.", 5000);
+          } else {
+            hint.innerHTML = `Đã chọn ${state.runtime.manual.points.length}/4 góc…`;
+          }
+        };
+
+        // gắn tạm listener (tự gỡ khi đủ 4)
+        canvas.addEventListener("click", onClick, {once:false});
+      }
+
+      function drawManualPoints(canvas, pts){
+        const ctx = canvas.getContext("2d");
+        // redraw preview image
+        const imgEl = state.runtime.image.imgEl;
+        if (imgEl) drawImageContain(ctx, imgEl, canvas.width, canvas.height);
+        ctx.save();
+        ctx.fillStyle = "rgba(245,158,11,.95)";
+        ctx.strokeStyle = "rgba(245,158,11,.95)";
+        ctx.lineWidth = 4;
+        pts.forEach((p, idx) => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 12, 0, Math.PI*2);
+          ctx.fill();
+          ctx.fillStyle = "#111827";
+          ctx.font = "bold 16px " + getComputedStyle(document.body).fontFamily;
+          ctx.fillText(String(idx+1), p.x-5, p.y+6);
+          ctx.fillStyle = "rgba(245,158,11,.95)";
+        });
+        if (pts.length >= 2){
+          ctx.beginPath();
+          ctx.moveTo(pts[0].x, pts[0].y);
+          for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // ------------------------------
+      // Export
+      // ------------------------------
+      function buildExportRows(){
+        const ex = state.project.exam;
+        const rows = [];
+        for (const r of state.project.results){
+          if (ex && r.examId !== ex.id) continue;
+          rows.push(r);
+        }
+        return rows;
+      }
+
+      function exportCSV(){
+        const ex = state.project.exam;
+        if (!ex) return toast("Chưa có kỳ thi.");
+        const rows = buildExportRows();
+        if (!rows.length) return toast("Chưa có bài đã lưu.");
+
+        const headers = [
+          "MSSV","HoTen","Lop","MaDe","SoCauDung","SoCauSai","SoCauTrong","SoCauCanKiemTra",
+          "DiemTracNghiem","DiemTuLuan","TongDiem","GhiChuSuaTay","ThoiGianCham",
+          ...Array.from({length: ex.numQuestions}, (_,i) => `Q${i+1}`)
+        ];
+
+        const lines = [headers.join(",")];
+        for (const r of rows){
+          const base = [
+            csvCell(r.mssv),
+            csvCell(r.fullName),
+            csvCell(r.studentClass),
+            csvCell(r.maDe),
+            r.counts.correct,
+            r.counts.wrong,
+            r.counts.empty,
+            r.counts.needCheck,
+            r.scoreMC.toFixed(2),
+            r.scoreEssay.toFixed(2),
+            r.scoreTotal.toFixed(2),
+            csvCell(r.manualNote || ""),
+            csvCell(r.timestamp),
+          ];
+          const qs = (r.finalAnswers || []).map(a => csvCell(a || ""));
+          lines.push([...base, ...qs].join(","));
+        }
+        const fn = `ketqua_${slug(ex.courseCode||"monhoc")}_${Date.now()}.csv`;
+        downloadText(fn, lines.join("\n"));
+      }
+      function csvCell(v){
+        const s = String(v ?? "");
+        if (/[,"\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+        return s;
+      }
+      function slug(s){ return String(s||"").trim().toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,""); }
+
+      function exportXLSX(){
+        const ex = state.project.exam;
+        if (!ex) return toast("Chưa có kỳ thi.");
+        const rows = buildExportRows();
+        if (!rows.length) return toast("Chưa có bài đã lưu.");
+        if (!window.XLSX){
+          toast("Chưa tải được thư viện XLSX. Bạn có thể xuất <b>CSV</b> (mở bằng Excel).", 5200);
+          return;
+        }
+        const aoa = [];
+        aoa.push([
+          "MSSV","HoTen","Lop","MaDe","SoCauDung","SoCauSai","SoCauTrong","SoCauCanKiemTra",
+          "DiemTracNghiem","DiemTuLuan","TongDiem","GhiChuSuaTay","ThoiGianCham",
+          ...Array.from({length: ex.numQuestions}, (_,i) => `Q${i+1}`)
+        ]);
+        for (const r of rows){
+          aoa.push([
+            r.mssv, r.fullName, r.studentClass, r.maDe,
+            r.counts.correct, r.counts.wrong, r.counts.empty, r.counts.needCheck,
+            Number(r.scoreMC.toFixed(2)), Number(r.scoreEssay.toFixed(2)), Number(r.scoreTotal.toFixed(2)),
+            r.manualNote || "", r.timestamp,
+            ...(r.finalAnswers || []).map(a => a || "")
+          ]);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "KetQua");
+        const fn = `ketqua_${slug(ex.courseCode||"monhoc")}_${Date.now()}.xlsx`;
+        XLSX.writeFile(wb, fn);
+      }
+
+      // ------------------------------
+      // Save result
+      // ------------------------------
+      function saveCurrentResult(){
+        const ex = state.project.exam;
+        const scan = state.runtime.scan;
+        const key = getActiveAnswerKey();
+        if (!ex || !scan || !key) return toast("Chưa có dữ liệu quét.");
+
+        const g = gradeAnswers(scan.finalAnswers, key);
+        const scoreMC = g.correct * Number(ex.pointsPerQuestion || 0);
+        const scoreEssay = (Number(ex.essayMax || 0) > 0) ? Number($("#essayScore").value || 0) : 0;
+        const totalRaw = scoreMC + scoreEssay;
+        const scoreTotal = roundToStep(totalRaw, Number(ex.roundingStep || 0));
+
+        const editedQs = Object.keys(scan.manualEdits || {}).map(x => Number(x)+1).sort((a,b)=>a-b);
+        const manualEdits = editedQs.length;
+        const manualNote = manualEdits ? `Sửa tay: ${editedQs.map(q=>`Q${q}`).join(" ")}` : "";
+
+        const row = {
+          id: uid(),
+          examId: ex.id,
+          mssv: $("#mssv").value.trim(),
+          fullName: $("#fullName").value.trim(),
+          studentClass: $("#studentClass").value.trim(),
+          maDe: scan.maDe,
+          counts: {
+            correct: g.correct,
+            wrong: g.wrong,
+            empty: g.empty,
+            needCheck: scan.needCheck?.filter(Boolean).length || 0,
+          },
+          scoreMC,
+          scoreEssay,
+          scoreTotal,
+          finalAnswers: scan.finalAnswers.slice(),
+          manualEdits: scan.manualEdits,
+          manualNote: ($("#note").value.trim() || manualNote),
+          timestamp: nowISO(),
+        };
+        state.project.results.push(row);
+        saveProject();
+        toast("Đã lưu bài đã chấm vào bảng kết quả.");
+        renderStats();
+      }
+
+      // ------------------------------
+      // Stats
+      // ------------------------------
+      function renderStats(){
+        const ex = state.project.exam;
+        const box = $("#statsBox");
+        if (!ex){ box.textContent = "Chưa có kỳ thi."; return; }
+        const rows = buildExportRows();
+        if (!rows.length){ box.textContent = "Chưa có bài đã lưu."; return; }
+
+        // phổ điểm đơn giản (0..10, bước 1)
+        const hist = new Array(11).fill(0);
+        for (const r of rows){
+          const b = clamp(Math.round(r.scoreTotal), 0, 10);
+          hist[b]++;
+        }
+        const max = Math.max(...hist);
+        const bars = hist.map((v,i) => {
+          const w = max ? Math.round((v/max)*18) : 0;
+          return `${String(i).padStart(2," ")}: ${"█".repeat(w)} ${v}`;
+        }).join("\n");
+
+        // tỷ lệ đúng từng câu + top sai
+        const key = (() => {
+          // nếu có nhiều mã đề, thống kê theo mã đề hiện chọn (đơn giản)
+          const md = $("#maDeSelect")?.value;
+          return (state.project.exam?.versions?.[md]) || null;
+        })();
+        let qStatsHTML = "";
+        if (key){
+          const n = ex.numQuestions;
+          const correctCnt = new Array(n).fill(0);
+          const totalCnt = new Array(n).fill(0);
+          for (const r of rows){
+            if (r.maDe !== $("#maDeSelect").value) continue;
+            for (let i=0;i<n;i++){
+              totalCnt[i]++;
+              const sa = normalizeAnswerChar(r.finalAnswers?.[i] || "");
+              const ka = normalizeAnswerChar(key[i] || "");
+              if (sa && ka && sa === ka) correctCnt[i]++;
+            }
+          }
+          const rates = correctCnt.map((c,i) => ({q:i+1, rate: totalCnt[i] ? c/totalCnt[i] : 0, total: totalCnt[i]}));
+          rates.sort((a,b)=>a.rate-b.rate);
+          const worst = rates.filter(x=>x.total>0).slice(0,5);
+          if (worst.length){
+            qStatsHTML = `
+              <div class="hr"></div>
+              <div><b>Top câu nhiều SV sai</b> (theo mã đề đang chọn)</div>
+              <div class="muted">Tỷ lệ đúng thấp nhất:</div>
+              <ul style="margin:6px 0 0 18px">
+                ${worst.map(w => `<li>Q${w.q}: ${(w.rate*100).toFixed(0)}% đúng (${w.total} bài)</li>`).join("")}
+              </ul>
+            `;
+          }
+        }
+
+        box.innerHTML = `
+          <div><b>Số bài đã lưu:</b> ${rows.length}</div>
+          <div class="hr"></div>
+          <div><b>Phổ điểm (làm tròn 0–10):</b></div>
+          <pre class="mono" style="margin:8px 0 0 0;white-space:pre-wrap">${bars}</pre>
+          ${qStatsHTML}
+        `;
+      }
+
+      // ------------------------------
+      // Status panel
+      // ------------------------------
+      function renderStatus(){
+        const ex = state.project.exam;
+        const box = $("#statusBox");
+        const cvOk = cvReady();
+        const saved = state.project.results.length;
+        const versions = ex ? Object.keys(ex.versions||{}).length : 0;
+        const name = ex ? `${ex.courseCode||"(chưa có mã môn)"} — ${ex.courseName||"(chưa có tên môn)"}` : "(Chưa có kỳ thi)";
+        box.innerHTML = `
+          <div><b>Kỳ thi:</b> ${name}</div>
+          <div><b>Mã đề:</b> ${versions} (đã nhập)</div>
+          <div><b>Số bài đã lưu:</b> ${saved}</div>
+          <div class="hr"></div>
+          <div><b>Thư viện quét ảnh:</b> ${cvOk ? "<span style='color:#86efac'>Sẵn sàng</span>" : "<span style='color:#fde68a'>Đang tải…</span>"}</div>
+          <div class="muted" style="margin-top:6px">Nếu “đang tải” quá lâu: hãy kiểm tra mạng lần đầu mở trang.</div>
+        `;
+      }
+
+      // ------------------------------
+      // PWA install
+      // ------------------------------
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        state.pwa.deferredPrompt = e;
+      });
+      async function promptInstall(){
+        const dp = state.pwa.deferredPrompt;
+        if (!dp) return toast("Trình duyệt chưa hỗ trợ cài hoặc đã cài rồi.");
+        dp.prompt();
+        state.pwa.deferredPrompt = null;
+      }
+      async function checkOffline(){
+        const keys = await caches.keys().catch(()=>[]);
+        toast(`Cache offline hiện có: <b>${keys.length}</b> (nếu =0 hãy tải lại trang khi có mạng).`, 4500);
+      }
+
+      // ------------------------------
+      // Service worker
+      // ------------------------------
+      async function setupSW(){
+        if (!("serviceWorker" in navigator)) return;
+        try{
+          await navigator.serviceWorker.register("./sw.js");
+        }catch(err){
+          console.warn("SW register failed", err);
+        }
+      }
+
+      // ------------------------------
+      // Event wiring
+      // ------------------------------
+      function wireEvents(){
+        // top actions
+        $("#btnNewExam").addEventListener("click", () => {
+          ensureExam();
+          writeExamStateToForm();
+          gotoStep(1);
+        });
+        $("#btnDemo").addEventListener("click", () => {
+          state.project = defaultProject();
+          ensureExam();
+          const ex = state.project.exam;
+          ex.courseName = "Ví dụ: Xử lý ảnh số";
+          ex.courseCode = "CV201";
+          ex.className = "CTK42";
+          ex.semester = "HK2 2025-2026";
+          ex.numQuestions = 25;
+          ex.pointsPerQuestion = 0.25;
+          ex.essayMax = 2;
+          ex.roundingStep = 0.25;
+          ex.layout = defaultLayout(ex.numQuestions);
+          // tạo 2 mã đề demo
+          const ansA = "A,B,C,D,A,B,C,D,A,B,C,D,A,B,C,D,A,B,C,D,A,B,C,D,A";
+          const ansB = "B,C,D,A,B,C,D,A,B,C,D,A,B,C,D,A,B,C,D,A,B,C,D,A,B";
+          ex.versions["A1"] = parseAnswerKey(ansA, ex.numQuestions);
+          ex.versions["B1"] = parseAnswerKey(ansB, ex.numQuestions);
+          saveProject();
+          writeExamStateToForm();
+          renderMaDeSelect();
+          toast("Đã tạo dữ liệu demo. Hãy sang Bước 2 để chụp ảnh phiếu.", 4200);
+        });
+        $("#btnBackup").addEventListener("click", () => {
+          downloadText(`duan_chamtracnghiem_${Date.now()}.json`, JSON.stringify(state.project, null, 2));
+        });
+        $("#fileRestore").addEventListener("change", async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          const text = await f.text();
+          const j = safeJsonParse(text);
+          if (!j || j.version !== 1) return toast("File .json không hợp lệ.");
+          state.project = j;
+          saveProject();
+          ensureExam();
+          writeExamStateToForm();
+          renderMaDeSelect();
+          gotoStep(1);
+          toast("Đã nạp dự án .json.");
+          e.target.value = "";
+        });
+
+        // step 1
+        $("#btnAddVersion").addEventListener("click", addOrUpdateVersion);
+        $("#btnShowVersions").addEventListener("click", () => renderVersionsList(false));
+        $("#btnToStep2").addEventListener("click", () => {
+          readExamFormToState();
+          const ex = state.project.exam;
+          const versions = Object.keys(ex.versions||{}).length;
+          if (!versions) return toast("Bạn cần nhập ít nhất <b>1 mã đề</b> và đáp án chuẩn.");
+          saveProject();
+          gotoStep(2);
+        });
+        $("#numQ").addEventListener("change", () => {
+          readExamFormToState();
+          saveProject();
+          toast("Đã cập nhật số câu. Nhớ kiểm tra lại đáp án chuẩn (nếu cần).");
+          // refresh layout inputs theo số câu mới (nếu người dùng chưa nhập thủ công)
+          writeExamStateToForm();
+        });
+        $("#btnOpenTemplate").addEventListener("click", () => {
+          readExamFormToState();
+          const ex = state.project.exam;
+          const cols = ex.layout?.columns || defaultLayout(ex.numQuestions).columns;
+          const url = `./answer_sheet_generator.html?numQ=${encodeURIComponent(ex.numQuestions)}&cols=${encodeURIComponent(cols.join(","))}`;
+          window.open(url, "_blank", "noopener");
+        });
+        ["#col1Q","#col2Q","#col3Q"].forEach(sel => {
+          $(sel).addEventListener("change", () => {
+            readExamFormToState();
+            saveProject();
+          });
+        });
+        $("#essayMax").addEventListener("change", () => {
+          readExamFormToState();
+          saveProject();
+          syncEssayUI();
+          updateScoreUI();
+        });
+        $("#sheetType").addEventListener("change", () => {
+          readExamFormToState();
+          saveProject();
+          // nhắc nhẹ nếu chọn phiếu dạng bảng
+          if (state.project.exam.sheetType === "table"){
+            toast("Phiếu dạng bảng: khi quét, nếu không có marker hãy dùng <b>Chọn 4 góc thủ công</b>.");
+          }
+        });
+
+        // step 2
+        $("#btnBack1").addEventListener("click", () => gotoStep(1));
+        $("#btnClearImage").addEventListener("click", () => {
+          state.runtime.image = {file:null,imgEl:null,dataUrl:null};
+          $("#previewArea").innerHTML = "";
+          $("#btnToStep3").disabled = true;
+          $("#fileImage").value = "";
+        });
+        $("#fileImage").addEventListener("change", (e) => loadImageFile(e.target.files?.[0]));
+        $("#fileStudents").addEventListener("change", async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          const text = await f.text();
+          const list = parseCSV(text);
+          if (!list.length) return toast("Không đọc được CSV hoặc file trống.");
+          setStudents(list);
+          e.target.value = "";
+        });
+        $("#mssv").addEventListener("input", autofillStudentByMSSV);
+        $("#btnToStep3").addEventListener("click", async () => {
+          if (!state.runtime.image.imgEl) return toast("Chưa có ảnh.");
+          gotoStep(3);
+          await runScan();
+        });
+
+        // step 3
+        $("#btnBack2").addEventListener("click", () => gotoStep(2));
+        $("#btnRescan").addEventListener("click", runScan);
+        $("#onlyNeedCheck").addEventListener("change", renderReviewTable);
+        $("#btnToStep4").addEventListener("click", () => gotoStep(4));
+        $("#btnManualCorners").addEventListener("click", enableManualCorners);
+        $("#btnViewWarp").addEventListener("click", () => setScanView("warp"));
+        $("#btnViewOriginal").addEventListener("click", () => setScanView("orig"));
+
+        // step 4
+        $("#btnBack3").addEventListener("click", () => gotoStep(3));
+        $("#essayScore").addEventListener("input", updateScoreUI);
+        $("#btnSaveResult").addEventListener("click", saveCurrentResult);
+        $("#btnExportCSV").addEventListener("click", exportCSV);
+        $("#btnExportXLSX").addEventListener("click", exportXLSX);
+        $("#btnDangerReset").addEventListener("click", () => {
+          if (confirm("Xoá toàn bộ dữ liệu trên trình duyệt? Thao tác này không thể hoàn tác.")) resetAll();
+        });
+
+        // advanced
+        $("#minFill").addEventListener("input", () => {
+          state.settings.minFill = Number($("#minFill").value);
+        });
+        $("#minDiff").addEventListener("input", () => {
+          state.settings.minDiff = Number($("#minDiff").value);
+        });
+        $("#needCheckConf").addEventListener("input", () => {
+          state.settings.needCheckConf = Number($("#needCheckConf").value);
+          renderReviewTable();
+          updateScoreUI();
+        });
+        $("#btnInstallPWA").addEventListener("click", promptInstall);
+        $("#btnCheckOffline").addEventListener("click", checkOffline);
+      }
+
+      // ------------------------------
+      // Boot
+      // ------------------------------
+      function boot(){
+        ensureExam();
+        writeExamStateToForm();
+        renderWizardPills();
+        renderMaDeSelect();
+        renderStatus();
+        renderStats();
+        wireEvents();
+        setupSW();
+
+        // chờ OpenCV.js load để refresh status
+        const t = setInterval(() => {
+          renderStatus();
+          if (cvReady()) clearInterval(t);
+        }, 700);
+
+        // xuất hint cho XLSX
+        const xhint = $("#exportHint");
+        const t2 = setInterval(() => {
+          if (window.XLSX){
+            xhint.textContent = "XLSX sẵn sàng. Nếu không được, hãy dùng CSV (Excel mở được).";
+            clearInterval(t2);
+          } else {
+            xhint.textContent = "Nếu nút XLSX không hoạt động, hãy dùng nút CSV.";
+          }
+        }, 900);
+
+        gotoStep(state.runtime.step || 1);
+      }
+
+      boot();
+    })();
+  </script>
+</body>
+</html>
